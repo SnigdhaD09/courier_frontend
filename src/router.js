@@ -5,25 +5,18 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      name: "login",
-      component: () => import("./views/Login.vue"),
+      name: "loginhome",
+      component: () => import("./views/LoginHome.vue"),
     },
     {
-      path: "/homepage",
-      name: "homepage",
-      component: () => import("./views/HomePage.vue"),
+      path: "/adminlogin",
+      name: "adminlogin",
+      component: () => import("./views/AdminLogin.vue"),
     },
     {
-      path: "/trip/:id",
-      name: "editTrip",
-      props: true,
-      component: () => import("./views/EditTrip.vue"),
-    },
-    {
-      path: "/viewtrip/:id",
-      name: "viewTrip",
-      props: true,
-      component: () => import("./views/ViewTrip.vue"),
+      path: "/adminhomepage",
+      name: "adminhomepage",
+      component: () => import("./views/AdminHomePage.vue"),
     },
   ],
 });
