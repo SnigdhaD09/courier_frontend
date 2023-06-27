@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
 import HotelServices from "../services/HotelServices.js";
-import SiteServices from "../services/SiteServices.js";
+import CashierServices from "../services/CashierServices.js";
 
 const route = useRoute();
 const router = useRouter();

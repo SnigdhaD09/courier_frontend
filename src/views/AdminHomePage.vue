@@ -5,22 +5,22 @@ import { useRoute, useRouter } from "vue-router";
 import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
 import HotelServices from "../services/HotelServices.js";
-import SiteServices from "../services/SiteServices.js";
+import CashierServices from "../services/CashierServices.js";
 
 const route = useRoute();
 const router = useRouter();
 const trips = ref([]);
 const registeredTrips = ref([]);
 const hotels = ref([]);
-const sites = ref([]);
+const cashiers = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddHotel = ref(false);
 const isUpdateHotel = ref(false);
 const isViewHotel = ref(false);
-const isAddSite = ref(false);
-const isUpdateSite = ref(false);
-const isViewSite = ref(false);
+const isAddCashier = ref(false);
+const isUpdateCashier = ref(false);
+const isViewCashier = ref(false);
 const user = ref(null);
 var isAdmin = ref(false);
 const snackbar = ref({
@@ -45,12 +45,13 @@ var newHotel = ref({
   checkoutDate: undefined,
   phoneNumber: undefined,
 });
-var newSite = ref({
-  siteName: undefined,
-  siteDescription: undefined,
-  state: undefined,
-  city: undefined,
-  siteImage: undefined,
+var newCashier = ref({
+  firstName: undefined,
+  lastName: undefined,
+  email: undefined,
+  password: undefined,
+  address: undefined,
+  phoneNumber: undefined,
 });
 
 onMounted(async () => {
@@ -60,6 +61,7 @@ onMounted(async () => {
   }
   user.value = JSON.parse(localStorage.getItem("user"));
   isAdmin.value = user.value.isAdmin;
+  getCashiers();
 });
 
 async function getTrip() {
@@ -237,10 +239,10 @@ async function deleteHotel(hotelId, hotelName) {
     });
 }
 
-async function getSites() {
-  await SiteServices.getSites()
+async function getCashiers() {
+  await CashierServices.getCashiers()
     .then((response) => {
-      sites.value = response.data;
+      cashiers.value = response.data;
     })
     .catch((error) => {
       console.log(error);
@@ -250,10 +252,10 @@ async function getSites() {
     });
 }
 
-async function getSite(siteId) {
-  await SiteServices.getSite(siteId)
+async function getCashier(cashierId) {
+  await CashierServices.getCashier(cashierId)
     .then((response) => {
-      newSite.value = response.data;
+      newCashier.value = response.data;
     })
     .catch((error) => {
       console.log(error);
@@ -263,14 +265,14 @@ async function getSite(siteId) {
     });
 }
 
-async function addSite() {
-  await SiteServices.addSite(newSite.value)
+async function addCashier() {
+  await CashierServices.addCashier(newCashier.value)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newSite.value.siteName} added successfully!`;
-      isAddSite.value = false;
-      getSites();
+      snackbar.value.text = `${newCashier.value.firstName} added successfully!`;
+      isAddCashier.value = false;
+      getCashiers();
     })
     .catch((error) => {
       console.log(error);
@@ -280,14 +282,14 @@ async function addSite() {
     });
 }
 
-async function updateSite() {
-  await SiteServices.updateSite(newSite.value.id, newSite.value)
+async function updateCashier() {
+  await CashierServices.updateCashier(newCashier.value.id, newCashier.value)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newSite.value.siteName} updated successfully!`;
-      isAddSite.value = false;
-      getSites();
+      snackbar.value.text = `${newCashier.value.firstName} updated successfully!`;
+      isAddCashier.value = false;
+      getCashiers();
     })
     .catch((error) => {
       console.log(error);
@@ -296,14 +298,14 @@ async function updateSite() {
       snackbar.value.text = error.response.data.message;
     });
 }
-async function deleteSite(siteId, siteName) {
-  await SiteServices.deleteSite(siteId)
+async function deleteCashier(cashierId) {
+  await CashierServices.deleteCashier(cashierId)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${siteName} deleted successfully!`;
-      isAddSite.value = false;
-      getSites();
+      snackbar.value.text = `Cashier deleted successfully!`;
+      isAddCashier.value = false;
+      getCashiers();
     })
     .catch((error) => {
       console.log(error);
@@ -362,34 +364,35 @@ function closeViewHotel() {
   isViewHotel.value = false;
 }
 
-function openAddSite() {
-  closeViewSite();
-  newSite = ref({
-    siteName: undefined,
-    siteDescription: undefined,
-    state: undefined,
-    city: undefined,
-    siteImage: undefined,
+function openAddCashier() {
+  closeViewCashier();
+  newCashier = ref({
+    firstName: undefined,
+    lastName: undefined,
+    email: undefined,
+    password: undefined,
+    address: undefined,
+    phoneNumber: undefined,
   });
-  isAddSite.value = true;
+  isAddCashier.value = true;
 }
 
-function closeAddSite() {
-  isAddSite.value = false;
-  isUpdateSite.value = false;
+function closeAddCashier() {
+  isAddCashier.value = false;
+  isUpdateCashier.value = false;
 }
-function openUpdateSite(siteId) {
-  getSite(siteId),
-  openAddSite();
-  isUpdateSite.value = true;
-}
-
-function openViewSite() {
-  isViewSite.value = true;
+function openUpdateCashier(cashierId) {
+  getCashier(cashierId),
+  openAddCashier();
+  isUpdateCashier.value = true;
 }
 
-function closeViewSite() {
-  isViewSite.value = false;
+function openViewCashiers() {
+  isViewCashier.value = true;
+}
+
+function closeViewCashier() {
+  isViewCashier.value = false;
 }
 
 function closeSnackBar() {
@@ -420,17 +423,17 @@ function truncateDesc(desc){
             >Admin HomePage
           </v-card-title>
         </v-col>
-        <!-- <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="isAdmin" color="accent" @click="openViewSite()"
-            >View Sites</v-btn
+        <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCashiers()"
+            >View Cashiers</v-btn
           >
         </v-col>
-        <v-col class="d-flex justify-end" cols="2">
+        <!-- <v-col class="d-flex justify-end" cols="2">
           <v-btn v-if="isAdmin" color="accent" @click="openViewHotel()"
             >View Hotels</v-btn
           >
-        </v-col>
-        <v-col class="d-flex justify-end" cols="2">
+        </v-col> -->
+        <!-- <v-col class="d-flex justify-end" cols="2">
           <v-btn v-if="isAdmin" color="accent" @click="openAdd()"
             >Add Trip</v-btn
           >
@@ -622,89 +625,98 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 
-      <!-- Add Sites Dialog-->
-      <v-dialog persistent v-model="isAddSite" width="800">
+      <!-- Add Cashiers Dialog-->
+      <v-dialog persistent v-model="isAddCashier" width="800">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title v-if="!isUpdateSite" class="headline mb-2">Add Site</v-card-title>
-          <v-card-title v-if="isUpdateSite" class="headline mb-2">Update Site</v-card-title>
+          <v-card-title v-if="!isUpdateCashier" class="headline mb-2">Add Cashier</v-card-title>
+          <v-card-title v-if="isUpdateCashier" class="headline mb-2">Update Cashier</v-card-title>
           <v-card-text>
             <v-text-field
-              v-model="newSite.siteName"
-              label="Site Name"
+              v-model="newCashier.firstName"
+              label="First Name"
               required
             ></v-text-field>
-            <v-textarea
-              v-model="newSite.siteDescription"
-              label="Description"
-              required
-            ></v-textarea>
+
             <v-text-field
-              v-model="newSite.city"
-              label="City"
+              v-model="newCashier.lastName"
+              label="Last Name"
               required
             ></v-text-field>
             <v-text-field
-              v-model="newSite.state"
-              label="State"
+              v-model="newCashier.address"
+              label="Address"
               required
             ></v-text-field>
             <v-text-field
-              v-model="newSite.siteImage"
-              label="Image Link"
+              v-model="newCashier.phoneNumber"
+              label="Phone Number"
+              required
+            ></v-text-field>
+
+            <v-text-field
+              v-model="newCashier.email"
+              label="Email"
+              required
+            ></v-text-field>
+
+            <v-text-field
+              v-model="newCashier.password"
+              type="password"
+              label="Password"
               required
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAddSite()"
+            <v-btn variant="flat" color="secondary" @click="closeAddCashier()"
               >Close</v-btn
             >
-            <v-btn v-if="!isUpdateSite" variant="flat" color="primary" @click="addSite()"
-              >Add Site</v-btn>
-              <v-btn v-if="isUpdateSite" variant="flat" color="primary" @click="updateSite(newSite.id)"
-              >Update Site</v-btn>
+            <v-btn v-if="!isUpdateCashier" variant="flat" color="primary" @click="addCashier()"
+              >Add Cashier</v-btn>
+              <v-btn v-if="isUpdateCashier" variant="flat" color="primary" @click="updateCashier(newCashier.id)"
+              >Update Cashier</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
-<!-- View Sites Dialog-->
-      <v-dialog persistent v-model="isViewSite" width="800">
+<!-- View Cashiers Dialog-->
+      <v-dialog persistent v-model="isViewCashier" width="800">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">View Sites</v-card-title>
+          <v-card-title class="headline mb-2">View Cashiers</v-card-title>
           <v-card-text>
             <v-table>
               <thead>
                 <tr>
-                  <th>Site Name</th>
-                  <th>Description</th>
-                  <th>City</th>
-                  <th>State</th>
-                  <th>Image</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Phone</th>
                   <th>Edit</th>
                   <th>Delete</th>
                 </tr>
               </thead>
               <tbody>
-                <tr  v-for="site in sites"
-                  :key="site.id"
+                <tr  v-for="cashier in cashiers"
+                  :key="cashier.id"
                 >
-                  <td>{{ site.siteName }}</td>
-                  <td>{{ truncateDesc(site.siteDescription, 50)}}...</td>
-                  <td>{{ site.city }}</td>
-                  <td>{{ site.state }}</td>
-                  <td><a :href="site.siteImage" target="_blank"><img :src="site.siteImage" style="height: 40px; width: 50px;"/></a></td>
-                  <td><v-btn variant="flat" color="primary" @click="openUpdateSite(site.id)">Edit</v-btn></td>
-                  <td><v-btn variant="flat" color="primary" @click="deleteSite(site.id, site.siteName)">Delete</v-btn></td>
+                  <td>{{ cashier.firstName }}</td>
+                  <td>{{ cashier.lastName }}</td>
+                  <td>{{ cashier.email }}</td>
+                  <td>{{ cashier.address }}</td>
+                  <td>{{ cashier.phoneNumber }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openUpdateCashier(cashier.id)">Edit</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="deleteCashier(cashier.id)">Delete</v-btn></td>
                 </tr>
               </tbody>
             </v-table>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewSite()"
+            <v-btn variant="flat" color="secondary" @click="closeViewCashier()"
               >Close</v-btn
             >
-            <v-btn variant="flat" color="primary" @click="openAddSite()"
-              >Add Site</v-btn
+            <v-btn variant="flat" color="primary" @click="openAddCashier()"
+              >Add Cashier</v-btn
             >
           </v-card-actions>
         </v-card>
