@@ -41,7 +41,7 @@ function logout() {
     });
   localStorage.removeItem("user");
   user.value = null;
-  router.push({ name: "login" });
+  router.push({ name: "loginhome" });
 }
 
 async function updateAccount() {
