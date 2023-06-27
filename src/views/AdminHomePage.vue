@@ -57,7 +57,6 @@ onMounted(async () => {
   // console.log(route.params);
   if(route.params.id !== undefined){
     isUpdate.value = true;
-    getTrip();
   }
   user.value = JSON.parse(localStorage.getItem("user"));
   isAdmin.value = user.value.isAdmin;
