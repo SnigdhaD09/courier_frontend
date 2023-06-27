@@ -518,6 +518,101 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 
+      
+      <!-- Add Cashiers Dialog-->
+      <v-dialog persistent v-model="isAddCashier" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title v-if="!isUpdateCashier" class="headline mb-2">Add Cashier</v-card-title>
+          <v-card-title v-if="isUpdateCashier" class="headline mb-2">Update Cashier</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="newCashier.firstName"
+              label="First Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCashier.lastName"
+              label="Last Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCashier.address"
+              label="Address"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCashier.phoneNumber"
+              label="Phone Number"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCashier.email"
+              label="Email"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCashier.password"
+              type="password"
+              label="Password"
+              required
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeAddCashier()"
+              >Close</v-btn
+            >
+            <v-btn v-if="!isUpdateCashier" variant="flat" color="primary" @click="addCashier()"
+              >Add Cashier</v-btn>
+              <v-btn v-if="isUpdateCashier" variant="flat" color="primary" @click="updateCashier(newCashier.id)"
+              >Update Cashier</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+<!-- View Cashiers Dialog-->
+      <v-dialog persistent v-model="isViewCashier" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">View Cashiers</v-card-title>
+          <v-card-text>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Phone</th>
+                  <th>Edit</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="cashier in cashiers"
+                  :key="cashier.id"
+                >
+                  <td>{{ cashier.firstName }}</td>
+                  <td>{{ cashier.lastName }}</td>
+                  <td>{{ cashier.email }}</td>
+                  <td>{{ cashier.address }}</td>
+                  <td>{{ cashier.phoneNumber }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openUpdateCashier(cashier.id)">Edit</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="deleteCashier(cashier.id)">Delete</v-btn></td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeViewCashier()"
+              >Close</v-btn
+            >
+            <v-btn variant="flat" color="primary" @click="openAddCashier()"
+              >Add Cashier</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
 <!-- Add Hotels Dialog-->
       <v-dialog persistent v-model="isAddHotel" width="800">
         <v-card class="rounded-lg elevation-5">
@@ -625,102 +720,6 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 
-      <!-- Add Cashiers Dialog-->
-      <v-dialog persistent v-model="isAddCashier" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title v-if="!isUpdateCashier" class="headline mb-2">Add Cashier</v-card-title>
-          <v-card-title v-if="isUpdateCashier" class="headline mb-2">Update Cashier</v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="newCashier.firstName"
-              label="First Name"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model="newCashier.lastName"
-              label="Last Name"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newCashier.address"
-              label="Address"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newCashier.phoneNumber"
-              label="Phone Number"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model="newCashier.email"
-              label="Email"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model="newCashier.password"
-              type="password"
-              label="Password"
-              required
-            ></v-text-field>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAddCashier()"
-              >Close</v-btn
-            >
-            <v-btn v-if="!isUpdateCashier" variant="flat" color="primary" @click="addCashier()"
-              >Add Cashier</v-btn>
-              <v-btn v-if="isUpdateCashier" variant="flat" color="primary" @click="updateCashier(newCashier.id)"
-              >Update Cashier</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-<!-- View Cashiers Dialog-->
-      <v-dialog persistent v-model="isViewCashier" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">View Cashiers</v-card-title>
-          <v-card-text>
-            <v-table>
-              <thead>
-                <tr>
-                  <th>First Name</th>
-                  <th>Last Name</th>
-                  <th>Email</th>
-                  <th>Address</th>
-                  <th>Phone</th>
-                  <th>Edit</th>
-                  <th>Delete</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr  v-for="cashier in cashiers"
-                  :key="cashier.id"
-                >
-                  <td>{{ cashier.firstName }}</td>
-                  <td>{{ cashier.lastName }}</td>
-                  <td>{{ cashier.email }}</td>
-                  <td>{{ cashier.address }}</td>
-                  <td>{{ cashier.phoneNumber }}</td>
-                  <td><v-btn variant="flat" color="primary" @click="openUpdateCashier(cashier.id)">Edit</v-btn></td>
-                  <td><v-btn variant="flat" color="primary" @click="deleteCashier(cashier.id)">Delete</v-btn></td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewCashier()"
-              >Close</v-btn
-            >
-            <v-btn variant="flat" color="primary" @click="openAddCashier()"
-              >Add Cashier</v-btn
-            >
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
 
       <v-snackbar v-model="snackbar.value" rounded="pill">
         {{ snackbar.text }}
