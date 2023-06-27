@@ -60,7 +60,7 @@ onMounted(async () => {
     getTrip();
   }
   user.value = JSON.parse(localStorage.getItem("user"));
-  isAdmin.value = user.value.isAdmin;
+  isCashier.value = user.value.isCashier;
 });
 
 async function getTrip() {
@@ -418,7 +418,7 @@ function truncateDesc(desc){
       <v-row align="center" class="mb-4">
         <v-col cols="6"
           ><v-card-title class="pl-0 text-h4 font-weight-bold"
-            >Admin HomePage
+            >Cashier HomePage
           </v-card-title>
         </v-col>
         <!-- <v-col class="d-flex justify-end" cols="2">
@@ -438,28 +438,7 @@ function truncateDesc(desc){
         </v-col> -->
       </v-row>
 
-      <!-- <v-row v-if="!isAdmin">
-        Registered Trips:
-      </v-row>
-      <v-row>
-      <TripCard
-        v-for="trip in registeredTrips"
-        :key="trip.id"
-        :trip="trip"
-        @deletedList="getLists()"
-      />
-    </v-row>
-      <v-row v-if="!isAdmin">
-        Available Trips:
-      </v-row>
-      <v-row>
-      <TripCard
-        v-for="trip in trips"
-        :key="trip.id"
-        :trip="trip"
-        @deletedList="getLists()"
-      />
-    </v-row> -->
+      
       <v-dialog persistent v-model="isAdd" width="800">
         <v-card class="rounded-lg elevation-5">
           <v-card-title v-if="!isUpdate" class="headline mb-2">Add Trip </v-card-title>
