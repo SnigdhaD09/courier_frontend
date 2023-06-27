@@ -7,15 +7,21 @@ import UserServices from "../services/UserServices";
 const router = useRouter();
 
 const user = ref(null);
-const title = ref("Trip System");
+const title = ref("Courier System");
 const logoURL = ref("");
 const isCreateAccount = ref(false);
 const updateButtonText = ref("Update Account");
 var errorText = '';
+var homePageName = '';
 
 onMounted(() => {
   logoURL.value = ocLogo;
   user.value = JSON.parse(localStorage.getItem("user"));
+  if(user.value != null){
+    if(user.value.isAdmin){
+      homePageName = 'adminhomepage';
+    }
+  }
 });
 
 function openUpdateAccount(){
@@ -59,7 +65,7 @@ async function updateAccount() {
 <template>
   <div>
     <v-app-bar color="primary" app dark>
-      <router-link :to="{ name: 'homepage' }">
+      <router-link :to="{ name: homePageName }">
         <v-img
           class="mx-2"
           :src="logoURL"
@@ -72,8 +78,8 @@ async function updateAccount() {
         {{ title }}
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn class="mx-2" :to="{ name: 'homepage' }"> Home Page </v-btn>
-      <v-btn v-if="user === null" class="mx-2" :to="{ name: 'login' }">
+      <v-btn class="mx-2" :to="{ name: homePageName }"> Home Page </v-btn>
+      <v-btn v-if="user === null" class="mx-2" :to="{ name: 'loginhome' }">
         Login
       </v-btn>
       <v-menu v-if="user !== null" min-width="200px" rounded>
