@@ -59,7 +59,7 @@ onMounted(async () => {
     isUpdate.value = true;
   }
   user.value = JSON.parse(localStorage.getItem("user"));
-  isCashier.value = user.value.isCashier;
+  isCourier.value = user.value.isCourier;
 });
 
 async function getTrip() {
@@ -417,7 +417,7 @@ function truncateDesc(desc){
       <v-row align="center" class="mb-4">
         <v-col cols="6"
           ><v-card-title class="pl-0 text-h4 font-weight-bold"
-            >Cashier HomePage
+            >Courier HomePage
           </v-card-title>
         </v-col>
         <!-- <v-col class="d-flex justify-end" cols="2">

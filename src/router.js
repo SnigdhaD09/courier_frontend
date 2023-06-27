@@ -14,19 +14,29 @@ const router = createRouter({
       component: () => import("./views/AdminLogin.vue"),
     },
     {
-      path: "/cashierlogin",
-      name: "cashierlogin",
-      component: () => import("./views/CashierLogin.vue"),
-    },
-    {
       path: "/adminhomepage",
       name: "adminhomepage",
       component: () => import("./views/AdminHomePage.vue"),
     },
     {
+      path: "/cashierlogin",
+      name: "cashierlogin",
+      component: () => import("./views/CashierLogin.vue"),
+    },
+    {
       path: "/cashierhomepage",
       name: "cashierhomepage",
       component: () => import("./views/CashierHomePage.vue"),
+    },
+    {
+      path: "/courierlogin",
+      name: "courierlogin",
+      component: () => import("./views/CourierLogin.vue"),
+    },
+    {
+      path: "/courierhomepage",
+      name: "courierhomepage",
+      component: () => import("./views/CourierHomePage.vue"),
     },
   ],
 });
