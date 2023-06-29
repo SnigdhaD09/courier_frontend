@@ -6,6 +6,7 @@ import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
 import HotelServices from "../services/HotelServices.js";
 import CashierServices from "../services/CashierServices.js";
+import CourierServices from "../services/CourierServices.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -13,6 +14,7 @@ const trips = ref([]);
 const registeredTrips = ref([]);
 const hotels = ref([]);
 const cashiers = ref([]);
+const couriers = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddHotel = ref(false);
@@ -22,6 +24,8 @@ const isAddCashier = ref(false);
 const isAddCourier = ref(false);
 const isUpdateCashier = ref(false);
 const isViewCashier = ref(false);
+const isUpdateCourier = ref(false);
+const isViewCourier = ref(false);
 const user = ref(null);
 var isAdmin = ref(false);
 const snackbar = ref({
@@ -292,37 +296,6 @@ async function addCashier() {
     });
 }
 
-
-async function getCouriers() {
-  await CourierServices.getCouriers()
-    .then((response) => {
-      cashiers.value = response.data;
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
-async function addCourier() {
-  await CourierServices.addCourier(newCourier.value)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${newCourier.value.firstName} added successfully!`;
-      isAddCourier.value = false;
-      getCouriers();
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
 async function updateCashier() {
   await CashierServices.updateCashier(newCashier.value.id, newCashier.value)
     .then(() => {
@@ -347,6 +320,80 @@ async function deleteCashier(cashierId) {
       snackbar.value.text = `Cashier deleted successfully!`;
       isAddCashier.value = false;
       getCashiers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
+async function getCouriers() {
+  await CourierServices.getCouriers()
+    .then((response) => {
+      couriers.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function getCourier(courierId) {
+  await CourierServices.getCourier(courierId)
+    .then((response) => {
+      newCourier.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function addCourier() {
+  await CourierServices.addCourier(newCourier.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCourier.value.firstName} added successfully!`;
+      isAddCourier.value = false;
+      getCouriers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
+async function updateCourier() {
+  await CourierServices.updateCourier(newCourier.value.id, newCourier.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCourier.value.firstName} updated successfully!`;
+      isAddCourier.value = false;
+      getCouriers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function deleteCourier(courierId) {
+  await CourierServices.deleteCourier(courierId)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `Courier deleted successfully!`;
+      isAddCourier.value = false;
+      getCouriers();
     })
     .catch((error) => {
       console.log(error);
@@ -452,6 +499,20 @@ function openAddCourier() {
 function closeAddCourier() {
   isAddCourier.value = false;
   isUpdateCourier.value = false;
+}
+
+function openUpdateCourier(courierId) {
+  getCourier(courierId),
+  openAddCourier();
+  isUpdateCourier.value = true;
+}
+
+function openViewCouriers() {
+  isViewCourier.value = true;
+}
+
+function closeViewCourier() {
+  isViewCourier.value = false;
 }
 
 function closeSnackBar() {
@@ -631,7 +692,51 @@ function truncateDesc(desc){
           </v-card-actions>
         </v-card>
       </v-dialog>
-      
+
+      <!-- View Couriers Dialog-->
+      <v-dialog persistent v-model="isViewCourier" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">View Couriers</v-card-title>
+          <v-card-text>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Phone</th>
+                  <th>Edit</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="courier in couriers"
+                  :key="courier.id"
+                >
+                  <td>{{ courier.firstName }}</td>
+                  <td>{{ courier.lastName }}</td>
+                  <td>{{ courier.email }}</td>
+                  <td>{{ courier.address }}</td>
+                  <td>{{ courier.phoneNumber }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openUpdateCourier(courier.id)">Edit</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="deleteCourier(courier.id)">Delete</v-btn></td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeViewCourier()"
+              >Close</v-btn
+            >
+            <v-btn variant="flat" color="primary" @click="openAddCourier()"
+              >Add Courier</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <!-- Add Cashiers Dialog-->
       <v-dialog persistent v-model="isAddCashier" width="800">
         <v-card class="rounded-lg elevation-5">
