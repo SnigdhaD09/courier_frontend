@@ -19,6 +19,7 @@ const isAddHotel = ref(false);
 const isUpdateHotel = ref(false);
 const isViewHotel = ref(false);
 const isAddCashier = ref(false);
+const isAddCourier = ref(false);
 const isUpdateCashier = ref(false);
 const isViewCashier = ref(false);
 const user = ref(null);
@@ -53,6 +54,14 @@ var newCashier = ref({
   address: undefined,
   phoneNumber: undefined,
 });
+var newCourier = ref({
+  firstName: undefined,
+  lastName: undefined,
+  email: undefined,
+  password: undefined,
+  address: undefined,
+  phoneNumber: undefined,
+});
 
 onMounted(async () => {
   // console.log(route.params);
@@ -62,6 +71,7 @@ onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   isAdmin.value = user.value.isAdmin;
   getCashiers();
+  getCouriers();
 });
 
 async function getTrip() {
@@ -282,6 +292,37 @@ async function addCashier() {
     });
 }
 
+
+async function getCouriers() {
+  await CourierServices.getCouriers()
+    .then((response) => {
+      cashiers.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
+async function addCourier() {
+  await CourierServices.addCourier(newCourier.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCourier.value.firstName} added successfully!`;
+      isAddCourier.value = false;
+      getCouriers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
 async function updateCashier() {
   await CashierServices.updateCashier(newCashier.value.id, newCashier.value)
     .then(() => {
@@ -395,6 +436,24 @@ function closeViewCashier() {
   isViewCashier.value = false;
 }
 
+function openAddCourier() {
+  closeViewCourier();
+  newCourier = ref({
+    firstName: undefined,
+    lastName: undefined,
+    email: undefined,
+    password: undefined,
+    address: undefined,
+    phoneNumber: undefined,
+  });
+  isAddCourier.value = true;
+}
+
+function closeAddCourier() {
+  isAddCourier.value = false;
+  isUpdateCourier.value = false;
+}
+
 function closeSnackBar() {
   snackbar.value.value = false;
 }
@@ -426,6 +485,11 @@ function truncateDesc(desc){
         <v-col class="d-flex justify-end" cols="2">
           <v-btn v-if="isAdmin" color="accent" @click="openViewCashiers()"
             >View Cashiers</v-btn
+          >
+        </v-col>
+        <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCouriers()"
+            >View Couriers</v-btn
           >
         </v-col>
         <!-- <v-col class="d-flex justify-end" cols="2">
@@ -517,7 +581,56 @@ function truncateDesc(desc){
           </v-card-actions>
         </v-card>
       </v-dialog>
-
+<!-- Add Couriers Dialog-->
+<v-dialog persistent v-model="isAddCourier" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title v-if="!isUpdateCourier" class="headline mb-2">Add Courier</v-card-title>
+          <v-card-title v-if="isUpdateCourier" class="headline mb-2">Update Courier</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="newCourier.firstName"
+              label="First Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCourier.lastName"
+              label="Last Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCourier.address"
+              label="Address"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCourier.phoneNumber"
+              label="Phone Number"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCourier.email"
+              label="Email"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCourier.password"
+              type="password"
+              label="Password"
+              required
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeAddCourier()"
+              >Close</v-btn
+            >
+            <v-btn v-if="!isUpdateCourier" variant="flat" color="primary" @click="addCourier()"
+              >Add Courier</v-btn>
+              <v-btn v-if="isUpdateCourier" variant="flat" color="primary" @click="updateCourier(newCourier.id)"
+              >Update Courier</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       
       <!-- Add Cashiers Dialog-->
       <v-dialog persistent v-model="isAddCashier" width="800">
