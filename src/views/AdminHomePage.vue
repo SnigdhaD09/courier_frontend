@@ -499,6 +499,80 @@ async function deleteCustomer(courierId) {
 }
 
 
+async function getCosts() {
+  await CostServices.getCosts()
+    .then((response) => {
+      costs.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function getCost(costId) {
+  await CostServices.getCost(costId)
+    .then((response) => {
+      newCost.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function addCost() {
+  await CostServices.addCost(newCost.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCost.value.name} added successfully!`;
+      isAddCost.value = false;
+      getCosts();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
+async function updateCost() {
+  await CostServices.updateCost(newCost.value.id, newCost.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCost.value.name} updated successfully!`;
+      isAddCost.value = false;
+      getCosts();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function deleteCost(courierId) {
+  await CostServices.deleteCost(courierId)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `Cost deleted successfully!`;
+      isAddCost.value = false;
+      getCosts();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
 function openAdd() {
   newTrip = ref({
     tripTitle: undefined,
@@ -964,7 +1038,37 @@ function truncateDesc(desc){
       </v-dialog>
 
 
-      
+      <!-- Add Costs Dialog-->
+      <v-dialog persistent v-model="isAddCost" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title v-if="!isUpdateCost" class="headline mb-2">Add Cost</v-card-title>
+          <v-card-title v-if="isUpdateCost" class="headline mb-2">Update Cost</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="newCost.name"
+              label="Cost Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCost.price"
+              label="Price"
+              type="number"
+              step="0.01"
+              required
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeAddCost()"
+              >Close</v-btn
+            >
+            <v-btn v-if="!isUpdateCost" variant="flat" color="primary" @click="addCost()"
+              >Add Cost</v-btn>
+              <v-btn v-if="isUpdateCost" variant="flat" color="primary" @click="updateCost(newCost.id)"
+              >Update Cost</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <!-- View Costs Dialog-->
       <v-dialog persistent v-model="isViewCost" width="800">
         <v-card class="rounded-lg elevation-5">
