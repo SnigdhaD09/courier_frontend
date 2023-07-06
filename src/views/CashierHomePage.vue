@@ -416,9 +416,7 @@ function truncateDesc(desc){
     <div id="body">
       <v-row align="center" class="mb-4">
         <v-col cols="6"
-          ><v-card-title class="pl-0 text-h4 font-weight-bold"
-            >Cashier HomePage
-          </v-card-title>
+          ><v-card-title class="pl-0 text-h4 font-weight-bold">Cashier HomePage</v-card-title>
         </v-col>
         <!-- <v-col class="d-flex justify-end" cols="2">
           <v-btn v-if="isAdmin" color="accent" @click="openViewSite()"
