@@ -15,6 +15,7 @@ const registeredTrips = ref([]);
 const hotels = ref([]);
 const cashiers = ref([]);
 const couriers = ref([]);
+const customers = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddHotel = ref(false);
@@ -26,6 +27,7 @@ const isUpdateCashier = ref(false);
 const isViewCashier = ref(false);
 const isUpdateCourier = ref(false);
 const isViewCourier = ref(false);
+const isViewCustomer = ref(false);
 const user = ref(null);
 var isAdmin = ref(false);
 const snackbar = ref({
@@ -515,6 +517,15 @@ function closeViewCourier() {
   isViewCourier.value = false;
 }
 
+function openViewCustomers() {
+  isViewCustomer.value = true;
+}
+
+function closeViewCustomers() {
+  isViewCustomer.value = false;
+}
+
+
 function closeSnackBar() {
   snackbar.value.value = false;
 }
@@ -553,11 +564,11 @@ function truncateDesc(desc){
             >View Couriers</v-btn
           >
         </v-col>
-        <!-- <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="isAdmin" color="accent" @click="openViewHotel()"
-            >View Hotels</v-btn
+        <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCustomers()"
+            >View Customers</v-btn
           >
-        </v-col> -->
+        </v-col>
         <!-- <v-col class="d-flex justify-end" cols="2">
           <v-btn v-if="isAdmin" color="accent" @click="openAdd()"
             >Add Trip</v-btn
@@ -732,6 +743,46 @@ function truncateDesc(desc){
             >
             <v-btn variant="flat" color="primary" @click="openAddCourier()"
               >Add Courier</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- View Customers Dialog-->
+      <v-dialog persistent v-model="isViewCustomer" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">View Customers</v-card-title>
+          <v-card-text>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>Customer Name</th>
+                  <th>Location</th>
+                  <th>Delivery</th>
+                  <th>Edit</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="customer in customers"
+                  :key="customer.id"
+                >
+                  <td>{{ customer.name }}</td>
+                  <td>{{ customer.location }}</td>
+                  <td>{{ customer.delivery }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openUpdateCustomer(customer.id)">Edit</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="deleteCustomer(customer.id)">Delete</v-btn></td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeViewCustomer()"
+              >Close</v-btn
+            >
+            <v-btn variant="flat" color="primary" @click="openAddCustomer()"
+              >Add Customer</v-btn
             >
           </v-card-actions>
         </v-card>
