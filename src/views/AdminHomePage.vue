@@ -8,6 +8,7 @@ import HotelServices from "../services/HotelServices.js";
 import CashierServices from "../services/CashierServices.js";
 import CourierServices from "../services/CourierServices.js";
 import CustomerServices from "../services/CustomerServices.js";
+import CostServices from "../services/CostServices.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -17,6 +18,7 @@ const hotels = ref([]);
 const cashiers = ref([]);
 const couriers = ref([]);
 const customers = ref([]);
+const costs = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddHotel = ref(false);
@@ -31,6 +33,9 @@ const isViewCourier = ref(false);
 const isAddCustomer = ref(false);
 const isUpdateCustomer = ref(false);
 const isViewCustomer = ref(false);
+const isAddCost = ref(false);
+const isUpdateCost = ref(false);
+const isViewCost = ref(false);
 const user = ref(null);
 var isAdmin = ref(false);
 const snackbar = ref({
@@ -76,6 +81,10 @@ var newCustomer = ref({
   location: undefined,
   delivery: undefined,
 });
+var newCost = ref({
+  name: undefined,
+  price: undefined,
+});
 
 onMounted(async () => {
   // console.log(route.params);
@@ -87,6 +96,7 @@ onMounted(async () => {
   getCashiers();
   getCouriers();
   getCustomers();
+  getCosts();
 });
 
 async function getTrip() {
@@ -614,8 +624,8 @@ function closeAddCustomer() {
   isUpdateCustomer.value = false;
 }
 
-function openUpdateCustomer(courierId) {
-  getCustomer(courierId),
+function openUpdateCustomer(customerId) {
+  getCustomer(customerId),
   openAddCustomer();
   isUpdateCustomer.value = true;
 }
@@ -626,6 +636,35 @@ function openViewCustomers() {
 
 function closeViewCustomers() {
   isViewCustomer.value = false;
+}
+
+function openAddCost() {
+  closeViewCosts();
+  newCost = ref({
+    name: undefined,
+    location: undefined,
+    delivery: undefined,
+  });
+  isAddCost.value = true;
+}
+
+function closeAddCost() {
+  isAddCost.value = false;
+  isUpdateCost.value = false;
+}
+
+function openUpdateCost(costId) {
+  getCost(costId),
+  openAddCost();
+  isUpdateCost.value = true;
+}
+
+function openViewCosts() {
+  isViewCost.value = true;
+}
+
+function closeViewCosts() {
+  isViewCost.value = false;
 }
 
 
@@ -652,7 +691,7 @@ function truncateDesc(desc){
   <v-container>
     <div id="body">
       <v-row align="center" class="mb-4">
-        <v-col cols="6"
+        <v-col cols="4"
           ><v-card-title class="pl-0 text-h4 font-weight-bold"
             >Admin HomePage
           </v-card-title>
@@ -672,11 +711,10 @@ function truncateDesc(desc){
             >View Customers</v-btn
           >
         </v-col>
-        <!-- <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="isAdmin" color="accent" @click="openAdd()"
-            >Add Trip</v-btn
-          >
-        </v-col> -->
+        <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCosts()">
+            View Costs</v-btn>
+        </v-col>
       </v-row>
 
       <!-- <v-row v-if="!isAdmin">
@@ -925,6 +963,45 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 
+
+      
+      <!-- View Costs Dialog-->
+      <v-dialog persistent v-model="isViewCost" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">View Costs</v-card-title>
+          <v-card-text>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Edit</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="cost in costs"
+                  :key="cost.id"
+                >
+                  <td>{{ cost.name }}</td>
+                  <td>{{ cost.price }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openUpdateCost(cost.id)">Edit</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="deleteCost(cost.id)">Delete</v-btn></td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeViewCosts()"
+              >Close</v-btn
+            >
+            <v-btn variant="flat" color="primary" @click="openAddCost()"
+              >Add Cost</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <!-- Add Cashiers Dialog-->
       <v-dialog persistent v-model="isAddCashier" width="800">
         <v-card class="rounded-lg elevation-5">
