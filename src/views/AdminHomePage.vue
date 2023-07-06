@@ -7,6 +7,7 @@ import TripServices from "../services/TripServices.js";
 import HotelServices from "../services/HotelServices.js";
 import CashierServices from "../services/CashierServices.js";
 import CourierServices from "../services/CourierServices.js";
+import CustomerServices from "../services/CustomerServices.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -27,6 +28,8 @@ const isUpdateCashier = ref(false);
 const isViewCashier = ref(false);
 const isUpdateCourier = ref(false);
 const isViewCourier = ref(false);
+const isAddCustomer = ref(false);
+const isUpdateCustomer = ref(false);
 const isViewCustomer = ref(false);
 const user = ref(null);
 var isAdmin = ref(false);
@@ -68,6 +71,11 @@ var newCourier = ref({
   address: undefined,
   phoneNumber: undefined,
 });
+var newCustomer = ref({
+  name: undefined,
+  location: undefined,
+  delivery: undefined,
+});
 
 onMounted(async () => {
   // console.log(route.params);
@@ -78,6 +86,7 @@ onMounted(async () => {
   isAdmin.value = user.value.isAdmin;
   getCashiers();
   getCouriers();
+  getCustomers();
 });
 
 async function getTrip() {
@@ -405,6 +414,80 @@ async function deleteCourier(courierId) {
     });
 }
 
+async function getCustomers() {
+  await CustomerServices.getCustomers()
+    .then((response) => {
+      customers.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function getCustomer(courierId) {
+  await CustomerServices.getCustomer(courierId)
+    .then((response) => {
+      newCustomer.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function addCustomer() {
+  await CustomerServices.addCustomer(newCustomer.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCustomer.value.name} added successfully!`;
+      isAddCustomer.value = false;
+      getCustomers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
+async function updateCustomer() {
+  await CustomerServices.updateCustomer(newCustomer.value.id, newCustomer.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newCustomer.value.name} updated successfully!`;
+      isAddCustomer.value = false;
+      getCustomers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function deleteCustomer(courierId) {
+  await CustomerServices.deleteCustomer(courierId)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `Customer deleted successfully!`;
+      isAddCustomer.value = false;
+      getCustomers();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
 
 function openAdd() {
   newTrip = ref({
@@ -515,6 +598,26 @@ function openViewCouriers() {
 
 function closeViewCourier() {
   isViewCourier.value = false;
+}
+function openAddCustomer() {
+  closeViewCustomers();
+  newCustomer = ref({
+    name: undefined,
+    location: undefined,
+    delivery: undefined,
+  });
+  isAddCustomer.value = true;
+}
+
+function closeAddCustomer() {
+  isAddCustomer.value = false;
+  isUpdateCustomer.value = false;
+}
+
+function openUpdateCustomer(courierId) {
+  getCustomer(courierId),
+  openAddCustomer();
+  isUpdateCustomer.value = true;
 }
 
 function openViewCustomers() {
@@ -748,6 +851,40 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 
+      <!-- Add Customers Dialog-->
+      <v-dialog persistent v-model="isAddCustomer" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title v-if="!isUpdateCustomer" class="headline mb-2">Add Customer</v-card-title>
+          <v-card-title v-if="isUpdateCustomer" class="headline mb-2">Update Customer</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="newCustomer.name"
+              label="Customer Name"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCustomer.location"
+              label="Location"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newCustomer.delivery"
+              label="Delivery"
+              required
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeAddCustomer()"
+              >Close</v-btn
+            >
+            <v-btn v-if="!isUpdateCustomer" variant="flat" color="primary" @click="addCustomer()"
+              >Add Customer</v-btn>
+              <v-btn v-if="isUpdateCustomer" variant="flat" color="primary" @click="updateCustomer(newCustomer.id)"
+              >Update Customer</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <!-- View Customers Dialog-->
       <v-dialog persistent v-model="isViewCustomer" width="800">
         <v-card class="rounded-lg elevation-5">
@@ -778,7 +915,7 @@ function truncateDesc(desc){
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewCustomer()"
+            <v-btn variant="flat" color="secondary" @click="closeViewCustomers()"
               >Close</v-btn
             >
             <v-btn variant="flat" color="primary" @click="openAddCustomer()"
