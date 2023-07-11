@@ -5,24 +5,27 @@ import { useRoute, useRouter } from "vue-router";
 import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
 import HotelServices from "../services/HotelServices.js";
+import DeliveryServices from "../services/DeliveryServices.js";
 import CashierServices from "../services/CashierServices.js";
+import CustomerServices from "../services/CustomerServices.js";
 
 const route = useRoute();
 const router = useRouter();
 const trips = ref([]);
 const registeredTrips = ref([]);
-const hotels = ref([]);
+const Deliveries = ref([]);
 const sites = ref([]);
+const customers = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
-const isAddHotel = ref(false);
-const isUpdateHotel = ref(false);
-const isViewHotel = ref(false);
+const isAddDelivery = ref(false);
+const isUpdateDelivery = ref(false);
+const isViewDelivery = ref(false);
 const isAddSite = ref(false);
 const isUpdateSite = ref(false);
 const isViewSite = ref(false);
 const user = ref(null);
-var isAdmin = ref(false);
+var isCashier = ref(false);
 const snackbar = ref({
   value: false,
   color: "",
@@ -36,14 +39,14 @@ var newTrip = ref({
   tripDestination: undefined,
   isArchived: false,
 });
-var newHotel = ref({
-  hotelName: undefined,
-  address: undefined,
-  website: undefined,
-  hotelImage: undefined,
-  checkinDate: undefined,
-  checkoutDate: undefined,
-  phoneNumber: undefined,
+var newDelivery = ref({
+  originCustomerId: undefined,
+  destinationCustomerId: undefined,
+  collectionTime: undefined,
+  deliveryTime: undefined,
+  blocksEstimate: 0,
+  status: 'Pending Pickup',
+  chargeEstimate: 0.00,
 });
 var newSite = ref({
   siteName: undefined,
@@ -60,8 +63,21 @@ onMounted(async () => {
   }
   user.value = JSON.parse(localStorage.getItem("user"));
   isCashier.value = user.value.isCashier;
+  getCustomers();
 });
 
+async function getCustomers() {
+  await CustomerServices.getCustomers()
+    .then((response) => {
+      customers.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
 async function getTrip() {
   console.log(route.params);
   await TripServices.getTrip(route.params.id)
@@ -187,14 +203,14 @@ async function getHotel(hotelId) {
     });
 }
 
-async function addHotel() {
-  await HotelServices.addHotel(newHotel.value)
+async function addDelivery() {
+  await DeliveryServices.addDelivery(newDelivery.value)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newHotel.value.hotelName} added successfully!`;
-      isAddHotel.value = false;
-      getHotels();
+      snackbar.value.text = `${newDelivery.value.DeliveryName} added successfully!`;
+      isAddDelivery.value = false;
+      getDeliveries();
     })
     .catch((error) => {
       console.log(error);
@@ -330,9 +346,9 @@ function closeAdd() {
   isAdd.value = false;
 }
 
-function openAddHotel() {
-  closeViewHotel();
-  newHotel = ref({
+function openAddDelivery() {
+  closeViewDelivery();
+  newDelivery = ref({
     hotelName: undefined,
     address: undefined,
     website: undefined,
@@ -341,25 +357,25 @@ function openAddHotel() {
     checkoutDate: undefined,
     phoneNumber: undefined,
   });
-  isAddHotel.value = true;
+  isAddDelivery.value = true;
 }
 
-function closeAddHotel() {
-  isAddHotel.value = false;
-  isUpdateHotel.value = false;
+function closeAddDelivery() {
+  isAddDelivery.value = false;
+  isUpdateDelivery.value = false;
 }
-function openUpdateHotel(hotelId) {
-  getHotel(hotelId),
-  openAddHotel();
-  isUpdateHotel.value = true;
-}
-
-function openViewHotel() {
-  isViewHotel.value = true;
+function openUpdateDelivery(hotelId) {
+  getDelivery(hotelId),
+  openAddDelivery();
+  isUpdateDelivery.value = true;
 }
 
-function closeViewHotel() {
-  isViewHotel.value = false;
+function openViewDelivery() {
+  isViewDelivery.value = true;
+}
+
+function closeViewDelivery() {
+  isViewDelivery.value = false;
 }
 
 function openAddSite() {
@@ -422,17 +438,11 @@ function truncateDesc(desc){
           <v-btn v-if="isAdmin" color="accent" @click="openViewSite()"
             >View Sites</v-btn
           >
+        </v-col>-->
+        <v-col class="d-flex justify-end" cols="6">
+          <v-btn v-if="isCashier" color="accent" @click="openAddDelivery()"
+            >Add Delivery</v-btn>
         </v-col>
-        <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="isAdmin" color="accent" @click="openViewHotel()"
-            >View Hotels</v-btn
-          >
-        </v-col>
-        <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="isAdmin" color="accent" @click="openAdd()"
-            >Add Trip</v-btn
-          >
-        </v-col> -->
       </v-row>
 
       
@@ -492,61 +502,81 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 
-<!-- Add Hotels Dialog-->
-      <v-dialog persistent v-model="isAddHotel" width="800">
+<!-- Add Deliveries Dialog-->
+      <v-dialog persistent v-model="isAddDelivery" width="800">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title v-if="!isUpdateHotel" class="headline mb-2">Add Hotel</v-card-title>
-          <v-card-title v-if="isUpdateHotel" class="headline mb-2">Update Hotel</v-card-title>
+          <v-card-title v-if="!isUpdateDelivery" class="headline mb-2">Add Delivery</v-card-title>
+          <v-card-title v-if="isUpdateDelivery" class="headline mb-2">Update Delivery</v-card-title>
           <v-card-text>
-            <v-text-field
-              v-model="newHotel.hotelName"
-              label="Hotel Name"
+            <v-select
+              v-model="newDelivery.originCustomerId"
+              label="Origin Customer"
+              :items="customers"
+              item-title="name"
+              item-value="id"
               required
-            ></v-text-field>
-            <v-textarea
-              v-model="newHotel.address"
-              label="Address"
+            >
+            <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.name"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+          </v-select>
+            <v-select
+              v-model="newDelivery.destinationCustomerId"
+              label="Destination Customer"
+              :items="customers"
+              item-title="name"
+              item-value="id"
               required
-            ></v-textarea>
+            > <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.name"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+              </v-select>
             <v-text-field
-              v-model="newHotel.website"
-              label="Website"
+              v-model="newDelivery.collectionTime"
+              label="Collection Time"
+              type="datetime-local"
               required
             ></v-text-field>
 
             <v-text-field
-              v-model="newHotel.hotelImage"
-              label="Image Link"
+              v-model="newDelivery.deliveryTime"
+              label="Delivery Time"
+              type="datetime-local"
               required
             ></v-text-field>
             <v-text-field
-              v-model.date="newHotel.checkinDate"
-              label="Checkin Date"
-              type="date"
+              v-model.date="newDelivery.blocksEstimate"
+              label="Blocks Estimate"
+              type="number"
               required
             ></v-text-field>
             <v-text-field
-              v-model.date="newHotel.checkoutDate"
-              label="Checkout Date"
-              type="date"
+              v-model.date="newDelivery.status"
+              label="Status"
               required
             ></v-text-field>
             <v-text-field
-              v-model="newHotel.phoneNumber"
-              label="Phone Number"
+              v-model="newDelivery.chargeEstimate"
+              label="Charge Estimate"
+              min="1" step="0.01"
+              type="number"
               required
             ></v-text-field>
             
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAddHotel()"
+            <v-btn variant="flat" color="secondary" @click="closeAddDelivery()"
               >Close</v-btn
             >
-            <v-btn v-if="!isUpdateHotel" variant="flat" color="primary" @click="addHotel()"
-              >Add Hotel</v-btn>
-              <v-btn v-if="isUpdateHotel" variant="flat" color="primary" @click="updateHotel(newHotel.id)"
-              >Update Hotel</v-btn>
+            <v-btn v-if="!isUpdateDelivery" variant="flat" color="primary" @click="addDelivery()"
+              >Add Delivery</v-btn>
+              <v-btn v-if="isUpdateDelivery" variant="flat" color="primary" @click="updateDelivery(newDelivery.id)"
+              >Update Delivery</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
