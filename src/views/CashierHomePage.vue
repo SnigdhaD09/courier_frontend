@@ -184,9 +184,9 @@ async function getDeliveries() {
     .then((response) => {
       deliveries.value = response.data.map(delivery => {
         let cTime = new Date(delivery.collectionTime);
-        delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+cTime.getHours()+":"+cTime.getMinutes();
+        delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+pad(cTime.getHours(),2)+":"+pad(cTime.getMinutes(),2);
         let dTime = new Date(delivery.deliveryTime);
-        delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+dTime.getHours()+":"+dTime.getMinutes();
+        delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+pad(dTime.getHours(),2)+":"+pad(dTime.getMinutes(),2);
         return delivery;
       });
     })
@@ -214,15 +214,29 @@ async function addDelivery() {
       snackbar.value.text = error.response.data.message;
     });
 }
+async function getDelivery(deliveryId) {
+  await DeliveryServices.getDelivery(deliveryId)
+    .then((response) => {
+      newDelivery.value = response.data;
+      newDelivery.value.collectionTime = formatDate(newDelivery.value.collectionTime);
+      newDelivery.value.deliveryTime = formatDate(newDelivery.value.deliveryTime);
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
 
-async function updateHotel() {
-  await HotelServices.updateHotel(newHotel.value.id, newHotel.value)
+async function updateDelivery() {
+  await DeliveryServices.updateDelivery(newDelivery.value.id, newDelivery.value)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newHotel.value.hotelName} updated successfully!`;
-      isAddHotel.value = false;
-      getHotels();
+      snackbar.value.text = `Delivery updated successfully!`;
+      isAddDelivery.value = false;
+      getDeliveries();
     })
     .catch((error) => {
       console.log(error);
@@ -376,9 +390,9 @@ function closeAddDelivery() {
   isAddDelivery.value = false;
   isUpdateDelivery.value = false;
 }
-function openUpdateDelivery(hotelId) {
-  getDelivery(hotelId),
+function openUpdateDelivery(deliveryId) {
   openAddDelivery();
+  getDelivery(deliveryId);
   isUpdateDelivery.value = true;
 }
 
@@ -425,9 +439,19 @@ function closeSnackBar() {
 }
 function formatDate (date) {
   if (!date) return null;
+  var dateObj = new Date(date);
   date = new Date(date).toISOString().substr(0, 10);
   const [year, month, day] = date.split('-');
-  return `${year}-${month}-${day}`;
+  const hours = pad(dateObj.getHours(), 2);
+  const minutes = pad(dateObj.getMinutes(), 2);
+  var aaa=  `${year}-${month}-${day}T${hours}:${minutes}`;
+  console.log(aaa);
+  return aaa;
+}
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
 
 function truncateDesc(desc){
