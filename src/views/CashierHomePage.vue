@@ -13,7 +13,7 @@ const route = useRoute();
 const router = useRouter();
 const trips = ref([]);
 const registeredTrips = ref([]);
-const Deliveries = ref([]);
+const deliveries = ref([]);
 const sites = ref([]);
 const customers = ref([]);
 const isAdd = ref(false);
@@ -64,6 +64,7 @@ onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   isCashier.value = user.value.isCashier;
   getCustomers();
+  getDeliveries();
 });
 
 async function getCustomers() {
@@ -175,25 +176,16 @@ async function addTrip() {
     });
   await getTrips();
 }
-async function getHotels() {
-  await HotelServices.getHotels()
+async function getDeliveries() {
+  await DeliveryServices.getDeliveries()
     .then((response) => {
-      hotels.value = response.data;
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
-async function getHotel(hotelId) {
-  await HotelServices.getHotel(hotelId)
-    .then((response) => {
-      newHotel.value = response.data;
-      newHotel.value.checkinDate = formatDate(newHotel.value.checkinDate);
-      newHotel.value.checkoutDate = formatDate(newHotel.value.checkoutDate);
+      deliveries.value = response.data.map(delivery => {
+        let cTime = new Date(delivery.collectionTime);
+        delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+cTime.getHours()+":"+cTime.getMinutes();
+        let dTime = new Date(delivery.deliveryTime);
+        delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+dTime.getHours()+":"+dTime.getMinutes();
+        return delivery;
+      });
     })
     .catch((error) => {
       console.log(error);
@@ -208,7 +200,7 @@ async function addDelivery() {
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newDelivery.value.DeliveryName} added successfully!`;
+      snackbar.value.text = `Delivery added successfully!`;
       isAddDelivery.value = false;
       getDeliveries();
     })
@@ -236,14 +228,14 @@ async function updateHotel() {
       snackbar.value.text = error.response.data.message;
     });
 }
-async function deleteHotel(hotelId, hotelName) {
-  await HotelServices.deleteHotel(hotelId)
+async function deleteDelivery(hotelId, hotelName) {
+  await DeliveryServices.deleteDelivery(hotelId)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
       snackbar.value.text = `${hotelName} deleted successfully!`;
-      isAddHotel.value = false;
-      getHotels();
+      isAddDelivery.value = false;
+      getDeliveries();
     })
     .catch((error) => {
       console.log(error);
@@ -349,14 +341,14 @@ function closeAdd() {
 function openAddDelivery() {
   closeViewDelivery();
   newDelivery = ref({
-    hotelName: undefined,
-    address: undefined,
-    website: undefined,
-    hotelImage: undefined,
-    checkinDate: undefined,
-    checkoutDate: undefined,
-    phoneNumber: undefined,
-  });
+  originCustomerId: undefined,
+  destinationCustomerId: undefined,
+  collectionTime: undefined,
+  deliveryTime: undefined,
+  blocksEstimate: 0,
+  status: 'Pending Pickup',
+  chargeEstimate: 0.00,
+});
   isAddDelivery.value = true;
 }
 
@@ -446,61 +438,54 @@ function truncateDesc(desc){
       </v-row>
 
       
-      <v-dialog persistent v-model="isAdd" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title v-if="!isUpdate" class="headline mb-2">Add Trip </v-card-title>
-          <v-card-title v-if="isUpdate" class="headline mb-2">Update Trip </v-card-title>
+      <v-card v-if="isCashier" class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">View Deliveries</v-card-title>
           <v-card-text>
-            <v-text-field
-              v-model="newTrip.tripTitle"
-              label="Title"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model.date="newTrip.startdate"
-              label="Start Date"
-              type="date"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model.date="newTrip.enddate"
-              label="End Date"
-              type="date"
-              required
-            ></v-text-field>
-
-            <v-textarea
-              v-model="newTrip.tripDescription"
-              label="Description"
-              required
-            ></v-textarea>
-            <v-text-field
-              v-model="newTrip.tripDestination"
-              label="Destination"
-              required
-            ></v-text-field>
-            <v-switch
-              v-model="newTrip.isArchived"
-              hide-details
-              inset
-              :label="`Archive? ${newTrip.isArchived ? 'Yes' : 'No'}`"
-            ></v-switch>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>Origin Customer Name</th>
+                  <th>Origin Customer Location</th>
+                  <th>Destination Customer Name</th>
+                  <th>Destination Customer Delivery</th>
+                  <th>Requested Collection Time</th>
+                  <th>Requested Delivery Time</th>
+                  <th>Blocks Estimate</th>
+                  <th>Status</th>
+                  <th>Charge Estimate</th>
+                  <th>Edit</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="delivery in deliveries"
+                  :key="delivery.id"
+                >
+                  <td>{{ delivery.originCustomer.name }}</td>
+                  <td>{{ delivery.originCustomer.location }}</td>
+                  <td>{{ delivery.destinationCustomer.name }}</td>
+                  <td>{{ delivery.destinationCustomer.delivery }}</td>
+                  <td>{{ delivery.collectionTime }}</td>
+                  <td>{{ delivery.deliveryTime }}</td>
+                  <td>{{ delivery.blocksEstimate }}</td>
+                  <td>{{ delivery.status }}</td>
+                  <td>$ {{ delivery.chargeEstimate }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openUpdateDelivery(delivery.id)">Edit</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="deleteDelivery(delivery.id)">Delete</v-btn></td>
+                </tr>
+              </tbody>
+            </v-table>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAdd()"
+            <v-btn variant="flat" color="secondary" @click="closeViewDelivery()"
               >Close</v-btn
             >
-            <v-btn v-if="!isUpdate" variant="flat" color="primary" @click="addTrip()"
-              >Add Trip</v-btn
-            >
-            <v-btn v-if="isUpdate" variant="flat" color="primary" @click="updateTrip()"
-              >Update Trip</v-btn
+            <v-btn variant="flat" color="primary" @click="openAddDelivery()"
+              >Add Delivery</v-btn
             >
           </v-card-actions>
         </v-card>
-      </v-dialog>
 
 <!-- Add Deliveries Dialog-->
       <v-dialog persistent v-model="isAddDelivery" width="800">
