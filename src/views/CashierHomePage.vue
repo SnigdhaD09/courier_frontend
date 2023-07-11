@@ -23,9 +23,12 @@ const isUpdateDelivery = ref(false);
 const isViewDelivery = ref(false);
 const isAddSite = ref(false);
 const isUpdateSite = ref(false);
+const isConfirmationOpen = ref(false);
 const isViewSite = ref(false);
 const user = ref(null);
+var tempId = null;
 var isCashier = ref(false);
+
 const snackbar = ref({
   value: false,
   color: "",
@@ -228,12 +231,29 @@ async function updateHotel() {
       snackbar.value.text = error.response.data.message;
     });
 }
-async function deleteDelivery(hotelId, hotelName) {
-  await DeliveryServices.deleteDelivery(hotelId)
+  
+function openConfirmDelete(deleteId){
+  isConfirmationOpen.value = true;
+  tempId = deleteId;
+}
+
+function confirmDeleteYes(){
+  deleteDelivery(tempId);
+  tempId = null;
+  closeConfirmDelete();
+}
+
+function closeConfirmDelete(){
+  isConfirmationOpen.value = false;
+}
+
+
+async function deleteDelivery(deliveryId) {
+  await DeliveryServices.deleteDelivery(deliveryId)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${hotelName} deleted successfully!`;
+      snackbar.value.text = `Delivery deleted successfully!`;
       isAddDelivery.value = false;
       getDeliveries();
     })
@@ -471,7 +491,7 @@ function truncateDesc(desc){
                   <td>{{ delivery.status }}</td>
                   <td>$ {{ delivery.chargeEstimate }}</td>
                   <td><v-btn variant="flat" color="primary" @click="openUpdateDelivery(delivery.id)">Edit</v-btn></td>
-                  <td><v-btn variant="flat" color="primary" @click="deleteDelivery(delivery.id)">Delete</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="openConfirmDelete(delivery.id)">Cancel</v-btn></td>
                 </tr>
               </tbody>
             </v-table>
@@ -486,7 +506,21 @@ function truncateDesc(desc){
             >
           </v-card-actions>
         </v-card>
-
+<!-- Delete Confirmation Dialog-->
+        <v-dialog persistent v-model="isConfirmationOpen" width="400">
+        <v-card class="rounded-lg elevation-6">
+          <v-card-title >Confirm Delete</v-card-title>
+          <v-card-text>Are you sure you want to cancel this delivery?</v-card-text>
+          <v-card-actions>
+            <v-btn variant="flat" color="secondary" @click="closeConfirmDelete()"
+              >Close</v-btn
+            >
+            <v-btn variant="flat" color="primary" @click="confirmDeleteYes()"
+              >Yes</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 <!-- Add Deliveries Dialog-->
       <v-dialog persistent v-model="isAddDelivery" width="800">
         <v-card class="rounded-lg elevation-5">
