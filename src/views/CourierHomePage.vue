@@ -24,6 +24,8 @@ const isUpdateSite = ref(false);
 const isViewSite = ref(false);
 const user = ref(null);
 var isCourier = ref(false);
+const deliveryAccepted = ref(null);
+
 const snackbar = ref({
   value: false,
   color: "",
@@ -66,27 +68,43 @@ onMounted(async () => {
   getDeliveries();
 });
 
-async function getTrip() {
-  console.log(route.params);
-  await TripServices.getTrip(route.params.id)
-    .then((response) => {
-      openAdd();
-      newTrip.value = response.data;
-      newTrip.value.startdate = formatDate(newTrip.value.startdate);
-      newTrip.value.enddate = formatDate(newTrip.value.enddate);
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+function openAcceptDelivery(delivery){
+  if(deliveryAccepted.value){
+    alert("You cannot accept more than one delivery at a time!");
+    return;
+  }
+  deliveryAccepted.value = delivery;
+  var startedAt = new Date();
+  startedAt = formatDate(startedAt);
+  var newTrip = {
+    startedAt: startedAt
+  };
+  updateTrip(delivery.id, {status: 'Accepted'}, newTrip);
 }
 
-async function updateTrip() {
-  await TripServices.updateTrip(newTrip.value.id, newTrip.value)
+function cancelDelivery(delivery){
+  if(!deliveryAccepted.value){
+    return;
+  }
+  alert("You are now cancelling the pickup!");
+  var newTrip = {
+    startedAt: null
+  };
+  updateTrip(delivery.id, {status: 'Pending Pickup'}, newTrip);
+  deliveryAccepted.value = null;
+}
+
+async function updateTrip(deliveryId, status, newTrip) {
+  var updateInfo = {
+    newTrip: newTrip,
+    newDelivery: status,
+  };
+  await DeliveryServices.updateTrip(deliveryId, updateInfo)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newTrip.value.tripTitle} updated successfully!`;
-      router.push({ name: "homepage" });
+      snackbar.value.text = `Delivery updated successfully!`;
+      getDeliveries();
     })
     .catch((error) => {
       console.log(error);
@@ -119,103 +137,15 @@ async function getDeliveries() {
         delivery.assignedCourierId = delivery.trip.assignedCourierId;
         delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
         if(user.value.id == delivery.assignedCourierId){
+          if(delivery.status == "Accepted"){
+            deliveryAccepted.value = delivery;
+          }
           return delivery;
         }
       });
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
-async function addTrip() {
-  await TripServices.addTrip(newTrip.value)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${newTrip.value.tripTitle} added successfully!`;
-      isAdd.value = false;
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-  await getTrips();
-}
-async function getHotels() {
-  await HotelServices.getHotels()
-    .then((response) => {
-      hotels.value = response.data;
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
-async function getHotel(hotelId) {
-  await HotelServices.getHotel(hotelId)
-    .then((response) => {
-      newHotel.value = response.data;
-      newHotel.value.checkinDate = formatDate(newHotel.value.checkinDate);
-      newHotel.value.checkoutDate = formatDate(newHotel.value.checkoutDate);
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
-async function addHotel() {
-  await HotelServices.addHotel(newHotel.value)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${newHotel.value.hotelName} added successfully!`;
-      isAddHotel.value = false;
-      getHotels();
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-
-async function updateHotel() {
-  await HotelServices.updateHotel(newHotel.value.id, newHotel.value)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${newHotel.value.hotelName} updated successfully!`;
-      isAddHotel.value = false;
-      getHotels();
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-}
-async function deleteHotel(hotelId, hotelName) {
-  await HotelServices.deleteHotel(hotelId)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${hotelName} deleted successfully!`;
-      isAddHotel.value = false;
-      getHotels();
+      deliveries.value = deliveries.value.filter(function(x) {
+        return x !== undefined;
+      });
     })
     .catch((error) => {
       console.log(error);
@@ -342,7 +272,7 @@ function truncateDesc(desc){
                   <th>Blocks Estimate</th>
                   <th>Status</th>
                   <th>Charge Estimate</th>
-                  <th>Start</th>
+                  <th>Actions</th>
                   <th>Cancel</th>
                 </tr>
               </thead>
@@ -359,15 +289,22 @@ function truncateDesc(desc){
                   <td>{{ delivery.blocksEstimate }}</td>
                   <td>{{ delivery.status }}</td>
                   <td>$ {{ delivery.chargeEstimate }}</td>
-                  <td><v-btn variant="flat" color="primary" @click="openStartDelivery(delivery.id)">Start</v-btn></td>
-                  <td><v-btn variant="flat" color="primary" @click="cancelDelivery(delivery.id)">Cancel</v-btn></td>
+                  <td>
+                    <v-btn v-if="delivery.status == 'Pending Pickup'" variant="flat" color="primary" @click="openAcceptDelivery(delivery)">Accept</v-btn>
+                    <v-btn v-if="delivery.status == 'Accepted'" variant="flat" color="primary" @click="openPickedUpDelivery(delivery)">Picked Up</v-btn>
+                    <v-btn v-if="delivery.status == 'Picked Up'" variant="flat" color="primary" @click="openDroppedOffDelivery(delivery)">Dropped Off</v-btn>
+                    <v-btn v-if="delivery.status == 'Dropped Off'" variant="flat" color="primary" disabled>Completed</v-btn>
+                  </td>
+                  <td><v-btn v-if="delivery.status != 'Pending Pickup' && delivery.status != 'Dropped Off'" variant="flat" color="primary" @click="cancelDelivery(delivery)">Cancel</v-btn></td>
                 </tr>
               </tbody>
             </v-table>
+            
           </v-card-text>
           <v-card-actions>
+            <v-span v-if="!deliveries.length">No Deliveries Assigned!</v-span>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="primary" @click="openAddDelivery()"
+            <v-btn v-if="deliveryAccepted" variant="flat" color="primary" @click="openDeliveryInstructions()"
               >View Delivery Instructions</v-btn
             >
           </v-card-actions>

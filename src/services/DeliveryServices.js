@@ -19,4 +19,7 @@ export default {
   deleteDelivery(deliveryId) {
     return apiClient.delete("deliveries/" + deliveryId);
   },
+  updateTrip(deliveryId, updateInfo) {
+    return apiClient.put("deliveries/" + deliveryId + "/status", updateInfo);
+  },
 };
