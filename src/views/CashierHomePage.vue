@@ -198,8 +198,10 @@ async function getDeliveries() {
         delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+pad(cTime.getHours(),2)+":"+pad(cTime.getMinutes(),2);
         let dTime = new Date(delivery.deliveryTime);
         delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+pad(dTime.getHours(),2)+":"+pad(dTime.getMinutes(),2);
-        delivery.assignedCourierId = delivery.trip.assignedCourierId;
-        delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
+        if(delivery.trip){
+          delivery.assignedCourierId = delivery.trip.assignedCourierId;
+          delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
+        }
         return delivery;
       });
     })
