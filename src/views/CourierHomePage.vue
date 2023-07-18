@@ -2,14 +2,16 @@
 import { onMounted } from "vue";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import TripCard from "../components/TripCardComponent.vue";
 import TripServices from "../services/TripServices.js";
-import HotelServices from "../services/HotelServices.js";
+import DeliveryServices from "../services/DeliveryServices.js";
+import CashierServices from "../services/CashierServices.js";
+import CourierServices from "../services/CourierServices.js";
+import CustomerServices from "../services/CustomerServices.js";
 
 const route = useRoute();
 const router = useRouter();
-const trips = ref([]);
-const registeredTrips = ref([]);
+const customers = ref([]);
+const deliveries = ref([]);
 const hotels = ref([]);
 const sites = ref([]);
 const isAdd = ref(false);
@@ -21,7 +23,7 @@ const isAddSite = ref(false);
 const isUpdateSite = ref(false);
 const isViewSite = ref(false);
 const user = ref(null);
-var isAdmin = ref(false);
+var isCourier = ref(false);
 const snackbar = ref({
   value: false,
   color: "",
@@ -59,6 +61,9 @@ onMounted(async () => {
   }
   user.value = JSON.parse(localStorage.getItem("user"));
   isCourier.value = user.value.isCourier;
+
+  getCustomers();
+  getDeliveries();
 });
 
 async function getTrip() {
@@ -91,55 +96,39 @@ async function updateTrip() {
     });
 }
 
-
-async function getTrips() {
-  user.value = JSON.parse(localStorage.getItem("user"));
-  if (user.value !== null && user.value.id !== null && user.value.isAdmin === false) {
-    await TripServices.getRegisteredTripsByUserId(user.value.id)
-      .then((response) => {
-        registeredTrips.value = response.data.map(registration => {
-          if(!registration.trip.isArchived){
-            return registration.trip;
-          }
-        });
-      })
-      .catch((error) => {
-        console.log(error);
-        snackbar.value.value = true;
-        snackbar.value.color = "error";
-        snackbar.value.text = error.response.data.message;
-      });
-      await TripServices.getTrips()
-      .then((response) => {
-        console.log(response);
-        var registered = registeredTrips.value.map(trip => {return trip.id;});
-        for(var i=0; i< response.data.length; i++){
-          if(!registered.includes(response.data[i].id) && !response.data[i].isArchived){
-            trips.value.push(response.data[i]);
-          }
+async function getCustomers() {
+  await CustomerServices.getCustomers()
+    .then((response) => {
+      customers.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function getDeliveries() {
+  await DeliveryServices.getDeliveries()
+    .then((response) => {
+      deliveries.value = response.data.map(delivery => {
+        let cTime = new Date(delivery.collectionTime);
+        delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+pad(cTime.getHours(),2)+":"+pad(cTime.getMinutes(),2);
+        let dTime = new Date(delivery.deliveryTime);
+        delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+pad(dTime.getHours(),2)+":"+pad(dTime.getMinutes(),2);
+        delivery.assignedCourierId = delivery.trip.assignedCourierId;
+        delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
+        if(user.value.id == delivery.assignedCourierId){
+          return delivery;
         }
-        
-        // console.log(trips);
-      })
-      .catch((error) => {
-        console.log(error);
-        snackbar.value.value = true;
-        snackbar.value.color = "error";
-        snackbar.value.text = error.response.data.message;
       });
-  } else {
-    await TripServices.getTrips()
-      .then((response) => {
-        trips.value = response.data;
-        // console.log(trips);
-      })
-      .catch((error) => {
-        console.log(error);
-        snackbar.value.value = true;
-        snackbar.value.color = "error";
-        snackbar.value.text = error.response.data.message;
-      });
-  }
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
 }
 
 async function addTrip() {
@@ -287,13 +276,23 @@ function closeViewHotel() {
 function closeSnackBar() {
   snackbar.value.value = false;
 }
+
 function formatDate (date) {
   if (!date) return null;
+  var dateObj = new Date(date);
   date = new Date(date).toISOString().substr(0, 10);
   const [year, month, day] = date.split('-');
-  return `${year}-${month}-${day}`;
+  const hours = pad(dateObj.getHours(), 2);
+  const minutes = pad(dateObj.getMinutes(), 2);
+  var aaa=  `${year}-${month}-${day}T${hours}:${minutes}`;
+  console.log(aaa);
+  return aaa;
 }
-
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+}
 function truncateDesc(desc){
   if(desc.length > 20){
     return desc.slice(0,20) + "...";
@@ -328,7 +327,51 @@ function truncateDesc(desc){
           >
         </v-col> -->
       </v-row>
-
+      <v-card v-if="isCourier" class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">View Deliveries</v-card-title>
+          <v-card-text>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>Origin Customer Name</th>
+                  <th>Origin Customer Location</th>
+                  <th>Destination Customer Name</th>
+                  <th>Destination Customer Delivery</th>
+                  <th>Requested Collection Time</th>
+                  <th>Requested Delivery Time</th>
+                  <th>Blocks Estimate</th>
+                  <th>Status</th>
+                  <th>Charge Estimate</th>
+                  <th>Start</th>
+                  <th>Cancel</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="delivery in deliveries"
+                  :key="delivery.id"
+                >
+                  <td>{{ delivery.originCustomer.name }}</td>
+                  <td>{{ delivery.originCustomer.location }}</td>
+                  <td>{{ delivery.destinationCustomer.name }}</td>
+                  <td>{{ delivery.destinationCustomer.delivery }}</td>
+                  <td>{{ delivery.collectionTime }}</td>
+                  <td>{{ delivery.deliveryTime }}</td>
+                  <td>{{ delivery.blocksEstimate }}</td>
+                  <td>{{ delivery.status }}</td>
+                  <td>$ {{ delivery.chargeEstimate }}</td>
+                  <td><v-btn variant="flat" color="primary" @click="openStartDelivery(delivery.id)">Start</v-btn></td>
+                  <td><v-btn variant="flat" color="primary" @click="cancelDelivery(delivery.id)">Cancel</v-btn></td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="primary" @click="openAddDelivery()"
+              >View Delivery Instructions</v-btn
+            >
+          </v-card-actions>
+        </v-card>
       
       <v-dialog persistent v-model="isAdd" width="800">
         <v-card class="rounded-lg elevation-5">
