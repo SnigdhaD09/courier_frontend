@@ -66,6 +66,7 @@ onMounted(async () => {
 
   getCustomers();
   getDeliveries();
+  getShortestPath();
 });
 
 function openAcceptDelivery(delivery){
@@ -228,6 +229,99 @@ function truncateDesc(desc){
     return desc.slice(0,20) + "...";
   }
   return desc;
+}
+
+function getShortestPath(){
+  const inputMap = createInputMap();
+  var startNode = "3rd Ave and C Street";
+  var endNode = "1st Ave and D Street";
+  var route = dijkstrasShortestPathAlgorith(inputMap, startNode, endNode);
+  console.log(route);
+}
+
+function createInputMap(){
+
+  const inputMap = {
+    "1st Ave and D Street": {
+      "1st Ave and C Street": 3,
+      "2nd Ave and D Street": 3,
+    },
+    "2nd Ave and B Street": {
+      "1st Ave and B Street": 3,
+      "2nd Ave and A Street": 3,
+      "2nd Ave and C Street": 3,
+    },
+    "2nd Ave and D Street": {
+      "1st Ave and D Street": 3,
+      "3rd Ave and D Street": 3,
+      "2nd Ave and E Street": 3,
+      "2nd Ave and C Street": 3,
+    },
+    "2nd Ave and C Street": {
+      "2nd Ave and B Street": 3,
+      "3rd Ave and C Street": 3,
+      "2nd Ave and D Street": 3,
+    },
+    "3rd Ave and C Street": {
+      "3rd Ave and B Street": 3,
+      "4th Ave and C Street": 3,
+    },
+    "3rd Ave and D Street": {
+      "3rd Ave and C Street": 3,
+      "2nd Ave and D Street": 3,
+      "4th Ave and D Street": 3,
+    },
+    "3rd Ave and B Street": {
+      "3rd Ave and A Street": 3,
+      "2nd Ave and B Street": 3,
+    },
+  };
+  return inputMap;
+}
+
+function dijkstrasShortestPathAlgorith(inputMap, startNode, endNode){
+  var last = {};
+  var blocks = {};
+  var nontraversed = new Set();
+  for (var node in inputMap){
+    if(node === startNode){
+      blocks[node] = 0;
+    }else{
+      blocks[node] = Infinity;
+    }
+    nontraversed.add(node);
+  }
+  
+  while(nontraversed.size){
+    var nearestNode = null;
+    for (var node of nontraversed){
+      if(blocks[nearestNode] > blocks[node] || !nearestNode){
+        nearestNode = node;
+      }
+    }
+    if(blocks[nearestNode] == Infinity){
+      break;
+    }
+    if(nearestNode === endNode){
+      break;
+    }
+    for(var neighbor in inputMap[nearestNode]){
+      var newBlocks = inputMap[nearestNode][neighbor] + blocks[nearestNode];
+      if(blocks[neighbor] > newBlocks){
+        blocks[neighbor] = newBlocks;
+        last[neighbor] = nearestNode;
+      }
+    }
+    nontraversed.delete(nearestNode);
+  }
+  var node = endNode;
+  var route = [];
+  while(node){
+    route.push(node);
+    node = last[node];
+  }
+  var correctRoute = route.reverse();
+  return correctRoute;
 }
 
 </script>
