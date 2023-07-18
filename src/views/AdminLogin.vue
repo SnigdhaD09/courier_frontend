@@ -14,6 +14,7 @@ const user = ref({
   email: undefined,
   password: undefined,
 });
+var homePageName;
 
 onMounted(async () => {
   if (localStorage.getItem("user") !== null) {
