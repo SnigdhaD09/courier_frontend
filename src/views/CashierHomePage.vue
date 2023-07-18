@@ -540,9 +540,9 @@ function truncateDesc(desc){
                   :key="delivery.id"
                 >
                   <td>{{ delivery.originCustomer.name }}</td>
-                  <td>{{ delivery.originCustomer.location }}</td>
+                  <!-- <td>{{ delivery.originCustomer.location }}</td> -->
                   <td>{{ delivery.destinationCustomer.name }}</td>
-                  <td>{{ delivery.destinationCustomer.delivery }}</td>
+                  <!-- <td>{{ delivery.destinationCustomer.delivery }}</td> -->
                   <td>{{ delivery.collectionTime }}</td>
                   <td>{{ delivery.deliveryTime }}</td>
                   <td>{{ delivery.blocksEstimate }}</td>
@@ -550,13 +550,14 @@ function truncateDesc(desc){
                   <td>$ {{ delivery.chargeEstimate }}</td>
                   <td>
                     <v-select
-              v-model="delivery.courier"
+              v-model="delivery.assignedCourierId"
               label="Assign Courier"
               placeholder="Select Courier"
               :items="couriers"
               item-title="firstName"
               item-value="id"
-              @change="assignCourier()"
+              searchable
+              :on-change="assignCourier(delivery.id, delivery)"
             > <template slot="item" slot-scope="data">
                   <v-list-tile-content>
                     <v-list-tile-title v-html="data.item.firstName"></v-list-tile-title>
