@@ -7,6 +7,7 @@ import TripServices from "../services/TripServices.js";
 import HotelServices from "../services/HotelServices.js";
 import DeliveryServices from "../services/DeliveryServices.js";
 import CashierServices from "../services/CashierServices.js";
+import CourierServices from "../services/CourierServices.js";
 import CustomerServices from "../services/CustomerServices.js";
 
 const route = useRoute();
@@ -16,6 +17,7 @@ const registeredTrips = ref([]);
 const deliveries = ref([]);
 const sites = ref([]);
 const customers = ref([]);
+const couriers = ref([]);
 const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddDelivery = ref(false);
@@ -66,6 +68,7 @@ onMounted(async () => {
   }
   user.value = JSON.parse(localStorage.getItem("user"));
   isCashier.value = user.value.isCashier;
+  getCouriers();
   getCustomers();
   getDeliveries();
 });
@@ -74,6 +77,18 @@ async function getCustomers() {
   await CustomerServices.getCustomers()
     .then((response) => {
       customers.value = response.data;
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+async function getCouriers() {
+  await CourierServices.getCouriers()
+    .then((response) => {
+      couriers.value = response.data;
     })
     .catch((error) => {
       console.log(error);
@@ -270,6 +285,24 @@ async function deleteDelivery(deliveryId) {
       snackbar.value.text = `Delivery deleted successfully!`;
       isAddDelivery.value = false;
       getDeliveries();
+    })
+    .catch((error) => {
+      console.log(error);
+      snackbar.value.value = true;
+      snackbar.value.color = "error";
+      snackbar.value.text = error.response.data.message;
+    });
+}
+
+async function assignCourier(){
+  console.log(event.target);
+  newTrip.assignedCourierId ;
+  await TripServices.addTrip(newTrip.value)
+    .then(() => {
+      snackbar.value.value = true;
+      snackbar.value.color = "green";
+      snackbar.value.text = `${newTrip.value.tripTitle} added successfully!`;
+      isAdd.value = false;
     })
     .catch((error) => {
       console.log(error);
@@ -497,6 +530,7 @@ function truncateDesc(desc){
                   <th>Blocks Estimate</th>
                   <th>Status</th>
                   <th>Charge Estimate</th>
+                  <th>Courier</th>
                   <th>Edit</th>
                   <th>Delete</th>
                 </tr>
@@ -514,6 +548,22 @@ function truncateDesc(desc){
                   <td>{{ delivery.blocksEstimate }}</td>
                   <td>{{ delivery.status }}</td>
                   <td>$ {{ delivery.chargeEstimate }}</td>
+                  <td>
+                    <v-select
+              v-model="delivery.courier"
+              label="Assign Courier"
+              placeholder="Select Courier"
+              :items="couriers"
+              item-title="firstName"
+              item-value="id"
+              @change="assignCourier()"
+            > <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.firstName"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+              </v-select>
+                  </td>
                   <td><v-btn variant="flat" color="primary" @click="openUpdateDelivery(delivery.id)">Edit</v-btn></td>
                   <td><v-btn variant="flat" color="primary" @click="openConfirmDelete(delivery.id)">Cancel</v-btn></td>
                 </tr>
