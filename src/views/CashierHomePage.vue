@@ -30,6 +30,7 @@ const isViewSite = ref(false);
 const user = ref(null);
 var tempId = null;
 var isCashier = ref(false);
+const selectedCourier = ref(null);
 
 const snackbar = ref({
   value: false,
@@ -52,13 +53,7 @@ var newDelivery = ref({
   blocksEstimate: 0,
   status: 'Pending Pickup',
   chargeEstimate: 0.00,
-});
-var newSite = ref({
-  siteName: undefined,
-  siteDescription: undefined,
-  state: undefined,
-  city: undefined,
-  siteImage: undefined,
+  assignedCourierId: undefined,
 });
 
 onMounted(async () => {
@@ -129,6 +124,7 @@ async function updateTrip() {
 
 
 async function getTrips() {
+  return;
   user.value = JSON.parse(localStorage.getItem("user"));
   if (user.value !== null && user.value.id !== null && user.value.isAdmin === false) {
     await TripServices.getRegisteredTripsByUserId(user.value.id)
@@ -202,6 +198,8 @@ async function getDeliveries() {
         delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+pad(cTime.getHours(),2)+":"+pad(cTime.getMinutes(),2);
         let dTime = new Date(delivery.deliveryTime);
         delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+pad(dTime.getHours(),2)+":"+pad(dTime.getMinutes(),2);
+        delivery.assignedCourierId = delivery.trip.assignedCourierId;
+        delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
         return delivery;
       });
     })
@@ -294,15 +292,22 @@ async function deleteDelivery(deliveryId) {
     });
 }
 
-async function assignCourier(){
-  console.log(event.target);
-  newTrip.assignedCourierId ;
-  await TripServices.addTrip(newTrip.value)
+async function assignCourier(deliveryId, delivery){
+  console.log(delivery);
+  var courier = delivery.assignedCourierId;
+  console.log(2);
+  if(delivery.assignedCourierId == delivery.oldAssignedCourierId){
+    console.log(3);
+    return;
+  }
+  console.log(4);
+  await DeliveryServices.assignCourier(deliveryId, courier)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${newTrip.value.tripTitle} added successfully!`;
-      isAdd.value = false;
+      snackbar.value.text = `Courier has been assigned successfully!`;
+      delivery.oldAssignedCourierId = delivery.assignedCourierId;
+      courier = null;
     })
     .catch((error) => {
       console.log(error);
@@ -522,9 +527,9 @@ function truncateDesc(desc){
               <thead>
                 <tr>
                   <th>Origin Customer Name</th>
-                  <th>Origin Customer Location</th>
+                  <!-- <th>Origin Customer Location</th> -->
                   <th>Destination Customer Name</th>
-                  <th>Destination Customer Delivery</th>
+                  <!-- <th>Destination Customer Delivery</th> -->
                   <th>Requested Collection Time</th>
                   <th>Requested Delivery Time</th>
                   <th>Blocks Estimate</th>
