@@ -578,9 +578,6 @@ function truncateDesc(desc){
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewDelivery()"
-              >Close</v-btn
-            >
             <v-btn variant="flat" color="primary" @click="openAddDelivery()"
               >Add Delivery</v-btn
             >
