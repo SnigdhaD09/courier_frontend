@@ -16,4 +16,10 @@ export default {
   deleteCustomer(customerId) {
     return apiClient.delete("customers/" + customerId);
   },
+  getStartNodes() {
+    return apiClient.get("customers/startnodes");
+  },
+  getRoute(startNode, endNode){
+    return apiClient.post("customers/route/", {startNode: startNode,endNode: endNode});
+  },
 };
