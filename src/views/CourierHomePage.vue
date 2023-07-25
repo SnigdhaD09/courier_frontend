@@ -27,7 +27,8 @@ var isCourier = ref(false);
 const deliveryAccepted = ref(null);
 const selectedLocation = ref(null);
 const startNodes = ref([]);
-const drivingRoute = ref({});
+const pickupRoute = ref({});
+const deliveryRoute = ref({});
 
 const snackbar = ref({
   value: false,
@@ -68,8 +69,9 @@ onMounted(async () => {
   isCourier.value = user.value.isCourier;
 
   getCustomers();
-  getDeliveries();
+  await getDeliveries();
   getStartNodes();
+  fetchDeliveryRoute();
 });
 
 function openAcceptDelivery(delivery){
@@ -84,6 +86,25 @@ function openAcceptDelivery(delivery){
     startedAt: startedAt
   };
   updateTrip(delivery.id, {status: 'Accepted'}, newTrip);
+  fetchDeliveryRoute();
+}
+
+async function fetchDeliveryRoute(){
+  await CustomerServices.getRoute(deliveryAccepted.value.originCustomer.location, deliveryAccepted.value.destinationCustomer.location)
+    .then((response) => {
+      deliveryRoute.value = {
+          route: JSON.parse(response.data.route),
+          startNode: deliveryAccepted.value.originCustomer.location,
+          endNode: deliveryAccepted.value.destinationCustomer.location,
+          numOfBlocks: response.data.numOfBlocks,
+        };
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
 }
 
 function cancelDelivery(delivery){
@@ -173,18 +194,17 @@ async function getStartNodes(){
 }
 
 async function locationSelected(){
-  if(!selectedLocation.value || (drivingRoute.value != null && selectedLocation.value == drivingRoute.value.startNode)){
+  if(!selectedLocation.value || (pickupRoute.value != null && selectedLocation.value == pickupRoute.value.startNode)){
     return;
   }
   await CustomerServices.getRoute(selectedLocation.value, deliveryAccepted.value.originCustomer.location)
     .then((response) => {
-      drivingRoute.value = {
+      pickupRoute.value = {
           route: JSON.parse(response.data.route),
           startNode: selectedLocation.value,
           endNode: deliveryAccepted.value.originCustomer.location,
           numOfBlocks: response.data.numOfBlocks,
         };
-        console.log(drivingRoute.value.route);
       })
       .catch((error) => {
         console.log(error);
@@ -350,120 +370,6 @@ function truncateDesc(desc){
           </v-card-actions>
         </v-card>
       
-      <v-dialog persistent v-model="isAdd" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title v-if="!isUpdate" class="headline mb-2">Add Trip </v-card-title>
-          <v-card-title v-if="isUpdate" class="headline mb-2">Update Trip </v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="newTrip.tripTitle"
-              label="Title"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model.date="newTrip.startdate"
-              label="Start Date"
-              type="date"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model.date="newTrip.enddate"
-              label="End Date"
-              type="date"
-              required
-            ></v-text-field>
-
-            <v-textarea
-              v-model="newTrip.tripDescription"
-              label="Description"
-              required
-            ></v-textarea>
-            <v-text-field
-              v-model="newTrip.tripDestination"
-              label="Destination"
-              required
-            ></v-text-field>
-            <v-switch
-              v-model="newTrip.isArchived"
-              hide-details
-              inset
-              :label="`Archive? ${newTrip.isArchived ? 'Yes' : 'No'}`"
-            ></v-switch>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAdd()"
-              >Close</v-btn
-            >
-            <v-btn v-if="!isUpdate" variant="flat" color="primary" @click="addTrip()"
-              >Add Trip</v-btn
-            >
-            <v-btn v-if="isUpdate" variant="flat" color="primary" @click="updateTrip()"
-              >Update Trip</v-btn
-            >
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-<!-- Add Hotels Dialog-->
-      <v-dialog persistent v-model="isAddHotel" width="800">
-        <v-card class="rounded-lg elevation-5">
-          <v-card-title v-if="!isUpdateHotel" class="headline mb-2">Add Hotel</v-card-title>
-          <v-card-title v-if="isUpdateHotel" class="headline mb-2">Update Hotel</v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="newHotel.hotelName"
-              label="Hotel Name"
-              required
-            ></v-text-field>
-            <v-textarea
-              v-model="newHotel.address"
-              label="Address"
-              required
-            ></v-textarea>
-            <v-text-field
-              v-model="newHotel.website"
-              label="Website"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model="newHotel.hotelImage"
-              label="Image Link"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model.date="newHotel.checkinDate"
-              label="Checkin Date"
-              type="date"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model.date="newHotel.checkoutDate"
-              label="Checkout Date"
-              type="date"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newHotel.phoneNumber"
-              label="Phone Number"
-              required
-            ></v-text-field>
-            
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAddHotel()"
-              >Close</v-btn
-            >
-            <v-btn v-if="!isUpdateHotel" variant="flat" color="primary" @click="addHotel()"
-              >Add Hotel</v-btn>
-              <v-btn v-if="isUpdateHotel" variant="flat" color="primary" @click="updateHotel(newHotel.id)"
-              >Update Hotel</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
 <!-- View Delivery Instructions Dialog-->
       <v-dialog persistent v-model="isViewDeliveryInstructions" width="800">
         <v-card class="rounded-lg elevation-5">
@@ -478,9 +384,15 @@ function truncateDesc(desc){
               :on-change="locationSelected()"
             > </v-select>
           </v-card-text>
-          <v-card-title class="headline mb-2">Driving Directions</v-card-title>
+          <v-card-title class="headline mb-2">Pickup Directions</v-card-title>
           <v-card-text>
-            <ul v-for="r in drivingRoute.route">
+            <ul v-for="r in pickupRoute.route">
+              <li>{{ r }}</li>
+            </ul>
+          </v-card-text>
+          <v-card-title class="headline mb-2">Delivery Directions</v-card-title>
+          <v-card-text>
+            <ul v-for="r in deliveryRoute.route">
               <li>{{ r }}</li>
             </ul>
           </v-card-text>
