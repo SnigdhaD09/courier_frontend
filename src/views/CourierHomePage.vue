@@ -18,13 +18,16 @@ const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddHotel = ref(false);
 const isUpdateHotel = ref(false);
-const isViewHotel = ref(false);
+const isViewDeliveryInstructions = ref(false);
 const isAddSite = ref(false);
 const isUpdateSite = ref(false);
 const isViewSite = ref(false);
 const user = ref(null);
 var isCourier = ref(false);
 const deliveryAccepted = ref(null);
+const selectedLocation = ref(null);
+const startNodes = ref([]);
+const drivingRoute = ref({});
 
 const snackbar = ref({
   value: false,
@@ -66,7 +69,7 @@ onMounted(async () => {
 
   getCustomers();
   getDeliveries();
-  getShortestPath();
+  getStartNodes();
 });
 
 function openAcceptDelivery(delivery){
@@ -156,6 +159,41 @@ async function getDeliveries() {
     });
 }
 
+async function getStartNodes(){
+  await CustomerServices.getStartNodes()
+    .then((response) => {
+        startNodes.value = response.data.map(node => {return node.startNode});
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+}
+
+async function locationSelected(){
+  if(!selectedLocation.value || (drivingRoute.value != null && selectedLocation.value == drivingRoute.value.startNode)){
+    return;
+  }
+  await CustomerServices.getRoute(selectedLocation.value, deliveryAccepted.value.originCustomer.location)
+    .then((response) => {
+      drivingRoute.value = {
+          route: JSON.parse(response.data.route),
+          startNode: selectedLocation.value,
+          endNode: deliveryAccepted.value.originCustomer.location,
+          numOfBlocks: response.data.numOfBlocks,
+        };
+        console.log(drivingRoute.value.route);
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+}
+
 function openAdd() {
   newTrip = ref({
     tripTitle: undefined,
@@ -196,12 +234,12 @@ function openUpdateHotel(hotelId) {
   isUpdateHotel.value = true;
 }
 
-function openViewHotel() {
-  isViewHotel.value = true;
+function openDeliveryInstructions() {
+  isViewDeliveryInstructions.value = true;
 }
 
-function closeViewHotel() {
-  isViewHotel.value = false;
+function closeDeliveryInstructions() {
+  isViewDeliveryInstructions.value = false;
 }
 
 function closeSnackBar() {
@@ -215,10 +253,9 @@ function formatDate (date) {
   const [year, month, day] = date.split('-');
   const hours = pad(dateObj.getHours(), 2);
   const minutes = pad(dateObj.getMinutes(), 2);
-  var aaa=  `${year}-${month}-${day}T${hours}:${minutes}`;
-  console.log(aaa);
-  return aaa;
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
 function pad(n, width, z) {
   z = z || '0';
   n = n + '';
@@ -229,99 +266,6 @@ function truncateDesc(desc){
     return desc.slice(0,20) + "...";
   }
   return desc;
-}
-
-function getShortestPath(){
-  const inputMap = createInputMap();
-  var startNode = "3rd Ave and C Street";
-  var endNode = "1st Ave and D Street";
-  var route = dijkstrasShortestPathAlgorith(inputMap, startNode, endNode);
-  console.log(route);
-}
-
-function createInputMap(){
-
-  const inputMap = {
-    "1st Ave and D Street": {
-      "1st Ave and C Street": 3,
-      "2nd Ave and D Street": 3,
-    },
-    "2nd Ave and B Street": {
-      "1st Ave and B Street": 3,
-      "2nd Ave and A Street": 3,
-      "2nd Ave and C Street": 3,
-    },
-    "2nd Ave and D Street": {
-      "1st Ave and D Street": 3,
-      "3rd Ave and D Street": 3,
-      "2nd Ave and E Street": 3,
-      "2nd Ave and C Street": 3,
-    },
-    "2nd Ave and C Street": {
-      "2nd Ave and B Street": 3,
-      "3rd Ave and C Street": 3,
-      "2nd Ave and D Street": 3,
-    },
-    "3rd Ave and C Street": {
-      "3rd Ave and B Street": 3,
-      "4th Ave and C Street": 3,
-    },
-    "3rd Ave and D Street": {
-      "3rd Ave and C Street": 3,
-      "2nd Ave and D Street": 3,
-      "4th Ave and D Street": 3,
-    },
-    "3rd Ave and B Street": {
-      "3rd Ave and A Street": 3,
-      "2nd Ave and B Street": 3,
-    },
-  };
-  return inputMap;
-}
-
-function dijkstrasShortestPathAlgorith(inputMap, startNode, endNode){
-  var last = {};
-  var blocks = {};
-  var nontraversed = new Set();
-  for (var node in inputMap){
-    if(node === startNode){
-      blocks[node] = 0;
-    }else{
-      blocks[node] = Infinity;
-    }
-    nontraversed.add(node);
-  }
-  
-  while(nontraversed.size){
-    var nearestNode = null;
-    for (var node of nontraversed){
-      if(blocks[nearestNode] > blocks[node] || !nearestNode){
-        nearestNode = node;
-      }
-    }
-    if(blocks[nearestNode] == Infinity){
-      break;
-    }
-    if(nearestNode === endNode){
-      break;
-    }
-    for(var neighbor in inputMap[nearestNode]){
-      var newBlocks = inputMap[nearestNode][neighbor] + blocks[nearestNode];
-      if(blocks[neighbor] > newBlocks){
-        blocks[neighbor] = newBlocks;
-        last[neighbor] = nearestNode;
-      }
-    }
-    nontraversed.delete(nearestNode);
-  }
-  var node = endNode;
-  var route = [];
-  while(node){
-    route.push(node);
-    node = last[node];
-  }
-  var correctRoute = route.reverse();
-  return correctRoute;
 }
 
 </script>
@@ -360,6 +304,7 @@ function dijkstrasShortestPathAlgorith(inputMap, startNode, endNode){
                   <th>Origin Customer Name</th>
                   <th>Origin Customer Location</th>
                   <th>Destination Customer Name</th>
+                  <th>Destination Customer Location</th>
                   <th>Destination Customer Delivery</th>
                   <th>Requested Collection Time</th>
                   <th>Requested Delivery Time</th>
@@ -377,6 +322,7 @@ function dijkstrasShortestPathAlgorith(inputMap, startNode, endNode){
                   <td>{{ delivery.originCustomer.name }}</td>
                   <td>{{ delivery.originCustomer.location }}</td>
                   <td>{{ delivery.destinationCustomer.name }}</td>
+                  <td>{{ delivery.destinationCustomer.location }}</td>
                   <td>{{ delivery.destinationCustomer.delivery }}</td>
                   <td>{{ delivery.collectionTime }}</td>
                   <td>{{ delivery.deliveryTime }}</td>
@@ -518,51 +464,34 @@ function dijkstrasShortestPathAlgorith(inputMap, startNode, endNode){
           </v-card-actions>
         </v-card>
       </v-dialog>
-<!-- View Hotels Dialog-->
-      <v-dialog persistent v-model="isViewHotel" width="800">
+<!-- View Delivery Instructions Dialog-->
+      <v-dialog persistent v-model="isViewDeliveryInstructions" width="800">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">View Hotels</v-card-title>
+          <v-card-title class="headline mb-2">View Delivery Instructions</v-card-title>
           <v-card-text>
-            <v-table>
-              <thead>
-                <tr>
-                  <th>Hotel Name</th>
-                  <th>Address</th>
-                  <th>Website</th>
-                  <th>Image</th>
-                  <th>CheckIn Date</th>
-                  <th>CheckOut Date</th>
-                  <th>Phone Number</th>
-                  <th>Edit</th>
-                  <th>Delete</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr  v-for="hotel in hotels"
-                  :key="hotel.id"
-                >
-                  <td>{{ hotel.hotelName }}</td>
-                  <td>{{ hotel.address }}</td>
-                  <td>{{ hotel.website }}</td>
-                  <td>{{ hotel.hotelImage }}</td>
-                  <td>{{ hotel.checkinDate }}</td>
-                  <td>{{ hotel.checkoutDate }}</td>
-                  <td>{{ hotel.phoneNumber }}</td>
-                  
-                  <td><v-btn variant="flat" color="primary" @click="openUpdateHotel(hotel.id)">Edit</v-btn></td>
-                  <td><v-btn variant="flat" color="primary" @click="deleteHotel(hotel.id, hotel.hotelName)">Delete</v-btn></td>
-                </tr>
-              </tbody>
-            </v-table>
+            <v-select
+              v-model="selectedLocation"
+              label="Select Your Location"
+              placeholder="Select Your Location"
+              :items="startNodes"
+              searchable
+              :on-change="locationSelected()"
+            > </v-select>
+          </v-card-text>
+          <v-card-title class="headline mb-2">Driving Directions</v-card-title>
+          <v-card-text>
+            <ul v-for="r in drivingRoute.route">
+              <li>{{ r }}</li>
+            </ul>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewHotel()"
+            <v-btn variant="flat" color="secondary" @click="closeDeliveryInstructions()"
               >Close</v-btn
             >
-            <v-btn variant="flat" color="primary" @click="openAddHotel()"
+            <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
               >Add Hotel</v-btn
-            >
+            > -->
           </v-card-actions>
         </v-card>
       </v-dialog>
