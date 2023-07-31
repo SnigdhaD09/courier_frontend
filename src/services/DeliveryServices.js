@@ -7,6 +7,9 @@ export default {
   getDeliveriesByCustomer(customerId) {
     return apiClient.get("deliveries/customer/" + customerId);
   },
+  getDeliveriesByCourier(courierId) {
+    return apiClient.get("deliveries/courier/" + courierId);
+  },
   getDelivery(id) {
     return apiClient.get("deliveries/" + id);
   },
