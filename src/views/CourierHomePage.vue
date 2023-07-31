@@ -117,7 +117,7 @@ async function openDroppedOffDelivery(delivery){
   var newTrip = {
     deliveredAt: deliveredAt
   };
-  updateTrip(delivery.id, {status: 'Dropped Off'}, newTrip);
+  await updateTrip(delivery.id, {status: 'Dropped Off'}, newTrip);
   await getDelivery(delivery.id);
   isDeliveredOpen.value = true;
 }
@@ -206,9 +206,9 @@ async function getDeliveries() {
     .then((response) => {
       deliveries.value = response.data.map(delivery => {
         let cTime = new Date(delivery.collectionTime);
-        delivery.collectionTime = cTime.getMonth()+"/"+cTime.getDate()+"/"+cTime.getFullYear()+" "+pad(cTime.getHours(),2)+":"+pad(cTime.getMinutes(),2);
+        delivery.collectionTime = (cTime.getMonth()+1)+"/"+cTime.getUTCDate()+"/"+cTime.getFullYear()+" "+pad(cTime.getUTCHours(),2)+":"+pad(cTime.getMinutes(),2);
         let dTime = new Date(delivery.deliveryTime);
-        delivery.deliveryTime = dTime.getMonth()+"/"+dTime.getDate()+"/"+dTime.getFullYear()+" "+pad(dTime.getHours(),2)+":"+pad(dTime.getMinutes(),2);
+        delivery.deliveryTime = (dTime.getMonth()+1)+"/"+dTime.getUTCDate()+"/"+dTime.getFullYear()+" "+pad(dTime.getUTCHours(),2)+":"+pad(dTime.getMinutes(),2);
         delivery.assignedCourierId = delivery.trip.assignedCourierId;
         delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
         if(user.value.id == delivery.assignedCourierId){
