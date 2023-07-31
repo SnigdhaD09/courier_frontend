@@ -9,6 +9,7 @@ import CashierServices from "../services/CashierServices.js";
 import CourierServices from "../services/CourierServices.js";
 import CustomerServices from "../services/CustomerServices.js";
 import CostServices from "../services/CostServices.js";
+import DeliveryServices from "../services/DeliveryServices";
 
 const route = useRoute();
 const router = useRouter();
@@ -23,7 +24,7 @@ const isAdd = ref(false);
 const isUpdate = ref(false);
 const isAddHotel = ref(false);
 const isUpdateHotel = ref(false);
-const isViewHotel = ref(false);
+const isOpenGenerateBilling = ref(false);
 const isAddCashier = ref(false);
 const isAddCourier = ref(false);
 const isUpdateCashier = ref(false);
@@ -37,6 +38,11 @@ const isAddCost = ref(false);
 const isUpdateCost = ref(false);
 const isViewCost = ref(false);
 const user = ref(null);
+const selectedCustomer = ref(null);
+const deliveries = ref([]);
+const totalCharge = ref(0.00);
+const totalBonus = ref(0.00);
+const finalBill = ref(0.00);
 var isAdmin = ref(false);
 const snackbar = ref({
   value: false,
@@ -498,6 +504,29 @@ async function deleteCustomer(courierId) {
     });
 }
 
+async function customerSelected(){
+  if(!selectedCustomer.value){
+    return null;
+  }
+  await DeliveryServices.getDeliveriesByCustomer(selectedCustomer.value)
+    .then((response) => {
+      totalCharge.value = 0;
+      totalBonus.value = 0;
+      finalBill.value = 0;
+        deliveries.value = response.data;
+        for(var i=0; i< deliveries.value.length; i++){
+          totalCharge.value += parseFloat(deliveries.value[i].chargeEstimate);
+          totalBonus.value += parseFloat(deliveries.value[i].trip.deliveredAt <= deliveries.value[i].deliveryTime? (deliveries.value[i].chargeEstimate * 0.1).toFixed(2) : 0.00);
+        }
+        finalBill.value = totalCharge.value + totalBonus.value;
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+}
 
 async function getCosts() {
   await CostServices.getCosts()
@@ -613,12 +642,12 @@ function openUpdateHotel(hotelId) {
   isUpdateHotel.value = true;
 }
 
-function openViewHotel() {
-  isViewHotel.value = true;
+function openGenerateBilling() {
+  isOpenGenerateBilling.value = true;
 }
 
-function closeViewHotel() {
-  isViewHotel.value = false;
+function closeGenerateBilling() {
+  isOpenGenerateBilling.value = false;
 }
 
 function openAddCashier() {
@@ -747,9 +776,18 @@ function closeSnackBar() {
 }
 function formatDate (date) {
   if (!date) return null;
+  var dateObj = new Date(date);
   date = new Date(date).toISOString().substr(0, 10);
   const [year, month, day] = date.split('-');
-  return `${year}-${month}-${day}`;
+  const hours = pad(dateObj.getHours(), 2);
+  const minutes = pad(dateObj.getMinutes(), 2);
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
 
 function truncateDesc(desc){
@@ -789,6 +827,29 @@ function truncateDesc(desc){
           <v-btn v-if="isAdmin" color="accent" @click="openViewCosts()">
             View Costs</v-btn>
         </v-col>
+      </v-row>
+      <v-row align="center" class="mb-4">
+        <v-col cols="4">
+        </v-col>
+        <v-col class="d-flex justify-end" cols="4">
+          <v-btn v-if="isAdmin" color="accent" @click="openGenerateBilling()"
+            >Generate Customer Billing</v-btn
+          >
+        </v-col>
+        <!-- <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCouriers()"
+            >View Couriers</v-btn
+          >
+        </v-col>
+        <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCustomers()"
+            >View Customers</v-btn
+          >
+        </v-col>
+        <v-col class="d-flex justify-end" cols="2">
+          <v-btn v-if="isAdmin" color="accent" @click="openViewCosts()">
+            View Costs</v-btn>
+        </v-col> -->
       </v-row>
 
       <!-- <v-row v-if="!isAdmin">
@@ -1259,50 +1320,77 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 <!-- View Hotels Dialog-->
-      <v-dialog persistent v-model="isViewHotel" width="800">
+      <v-dialog persistent v-model="isOpenGenerateBilling" width="950">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">View Hotels</v-card-title>
+          <v-card-title class="headline mb-2">Generate Customer Billing</v-card-title>
+          <v-card-text>
+            <v-select
+              v-model="selectedCustomer"
+              label="Select Customer"
+              :items="customers"
+              item-title="name"
+              item-value="id"
+              required
+              searchable
+              :on-change="customerSelected()"
+            >
+            <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.name"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+          </v-select>
+          </v-card-text>
           <v-card-text>
             <v-table>
               <thead>
                 <tr>
-                  <th>Hotel Name</th>
-                  <th>Address</th>
-                  <th>Website</th>
-                  <th>Image</th>
-                  <th>CheckIn Date</th>
-                  <th>CheckOut Date</th>
-                  <th>Phone Number</th>
-                  <th>Edit</th>
-                  <th>Delete</th>
+                  <th>Destination Customer Name</th>
+                  <th>Location</th>
+                  <th>Created At</th>
+                  <th>Expected Delivery</th>
+                  <th>Delivered At</th>
+                  <th>Blocks</th>
+                  <th>Charge</th>
+                  <th>Bonus</th>
                 </tr>
               </thead>
               <tbody>
-                <tr  v-for="hotel in hotels"
-                  :key="hotel.id"
+                <tr  v-for="delivery in deliveries"
+                  :key="delivery.id"
                 >
-                  <td>{{ hotel.hotelName }}</td>
-                  <td>{{ hotel.address }}</td>
-                  <td>{{ hotel.website }}</td>
-                  <td>{{ hotel.hotelImage }}</td>
-                  <td>{{ hotel.checkinDate }}</td>
-                  <td>{{ hotel.checkoutDate }}</td>
-                  <td>{{ hotel.phoneNumber }}</td>
-                  
-                  <td><v-btn variant="flat" color="primary" @click="openUpdateHotel(hotel.id)">Edit</v-btn></td>
-                  <td><v-btn variant="flat" color="primary" @click="deleteHotel(hotel.id, hotel.hotelName)">Delete</v-btn></td>
+                  <td>{{ delivery.destinationCustomer.name }}</td>
+                  <td>{{ delivery.destinationCustomer.location }}</td>
+                  <td>{{ formatDate(delivery.destinationCustomer.createdAt) }}</td>
+                  <td>{{ formatDate(delivery.deliveryTime) }}</td>
+                  <td>{{ formatDate(delivery.trip.deliveredAt) }}</td>
+                  <td>{{ delivery.trip.blocksToDestination }}</td>
+                  <td>${{ delivery.chargeEstimate }}</td>
+                  <td>${{ delivery.trip.deliveredAt <= delivery.deliveryTime? (delivery.chargeEstimate * 0.1).toFixed(2) : "0.00" }}</td>                  
+                </tr>
+                <tr>
+                  <td>Total</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>${{ totalCharge.toFixed(2) }}</td>
+                  <td>${{ totalBonus.toFixed(2) }}</td>
                 </tr>
               </tbody>
             </v-table>
+            <v-span style="font-size: small;">* All times are in 24 Hour format</v-span>
           </v-card-text>
+          
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeViewHotel()"
+            <v-btn variant="flat" color="secondary" @click="closeGenerateBilling()"
               >Close</v-btn
             >
-            <v-btn variant="flat" color="primary" @click="openAddHotel()"
+            <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
               >Add Hotel</v-btn
-            >
+            > -->
           </v-card-actions>
         </v-card>
       </v-dialog>
