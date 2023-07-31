@@ -25,6 +25,8 @@ const isViewSite = ref(false);
 const user = ref(null);
 var isCourier = ref(false);
 const deliveryAccepted = ref(null);
+const delivered = ref(null);
+const isDeliveredOpen = ref(false);
 const selectedLocation = ref(null);
 const startNodes = ref([]);
 const pickupRoute = ref({});
@@ -104,7 +106,7 @@ function openPickedUpDelivery(delivery){
   fetchDeliveryRoute();
 }
 
-function openDroppedOffDelivery(delivery){
+async function openDroppedOffDelivery(delivery){
   if(!deliveryAccepted.value){
     alert("You have not picked up a delivery!");
     return;
@@ -116,7 +118,25 @@ function openDroppedOffDelivery(delivery){
     deliveredAt: deliveredAt
   };
   updateTrip(delivery.id, {status: 'Dropped Off'}, newTrip);
-  // fetchDeliveryRoute();
+  await getDelivery(delivery.id);
+  isDeliveredOpen.value = true;
+}
+
+function closeDelivered(){
+  isDeliveredOpen.value = false;
+}
+
+async function getDelivery(deliveryId){
+  await DeliveryServices.getDelivery(deliveryId)
+  .then((response) => {
+      delivered.value = response.data;
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
 }
 
 async function fetchDeliveryRoute(){
@@ -429,6 +449,34 @@ function truncateDesc(desc){
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn variant="flat" color="secondary" @click="closeDeliveryInstructions()"
+              >Close</v-btn
+            >
+            <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
+              >Add Hotel</v-btn
+            > -->
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- View Delivered Dialog-->
+      <v-dialog persistent v-model="isDeliveredOpen" width="800">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">Delivered!</v-card-title>
+          <v-card-text>
+            Congrats on completing the delivery!
+          </v-card-text>
+          <v-card-text>
+            You have earned:
+          </v-card-text>
+          <v-card-text>
+            Delivery Amount: $ {{ delivered.chargeEstimate }}
+          </v-card-text>
+          <v-card-text>
+            On-Time Bonus: $ {{ delivered.trip.deliveredAt <= delivered.deliveryTime? (delivered.chargeEstimate * 0.1).toFixed(2) : "0.00" }}
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeDelivered()"
               >Close</v-btn
             >
             <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
