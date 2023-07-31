@@ -517,15 +517,20 @@ async function customerSelected(){
   }
   await DeliveryServices.getDeliveriesByCustomer(selectedCustomer.value)
     .then((response) => {
+      deliveries.value = [];
       totalCharge.value = 0;
       totalBonus.value = 0;
       finalBill.value = 0;
-        deliveries.value = response.data;
-        for(var i=0; i< deliveries.value.length; i++){
-          totalCharge.value += parseFloat(deliveries.value[i].chargeEstimate);
-          totalBonus.value += parseFloat(deliveries.value[i].trip.deliveredAt <= deliveries.value[i].deliveryTime? (deliveries.value[i].chargeEstimate * 0.1).toFixed(2) : 0.00);
+      for(var i=0; i< response.data.length; i++){
+        if(response.data[i].status != "Dropped Off"){
+          continue;
         }
-        finalBill.value = totalCharge.value + totalBonus.value;
+        totalCharge.value += parseFloat(response.data[i].chargeEstimate);
+        totalBonus.value += parseFloat(response.data[i].trip.deliveredAt <= response.data[i].deliveryTime? (response.data[i].chargeEstimate * 0.1).toFixed(2) : 0.00);
+        var temp = response.data[i];
+        deliveries.value.push(temp);
+      }
+      finalBill.value = totalCharge.value + totalBonus.value;
       })
       .catch((error) => {
         console.log(error);
@@ -540,16 +545,21 @@ async function courierSelected(){
     return null;
   }
   await DeliveryServices.getDeliveriesByCourier(selectedCourier.value)
-    .then((response) => {
+    .then((cresponse) => {
+      cdeliveries.value = [];
       ctotalCharge.value = 0;
       ctotalBonus.value = 0;
       cfinalBill.value = 0;
-      cdeliveries.value = response.data;
-        for(var i=0; i< cdeliveries.value.length; i++){
-          ctotalCharge.value += parseFloat(cdeliveries.value[i].chargeEstimate);
-          ctotalBonus.value += parseFloat(cdeliveries.value[i].trip.deliveredAt <= cdeliveries.value[i].deliveryTime? (cdeliveries.value[i].chargeEstimate * 0.1).toFixed(2) : 0.00);
+      for(var i=0; i< cresponse.data.length; i++){
+        if(cresponse.data[i].status != "Dropped Off"){
+          continue;
         }
-        cfinalBill.value = ctotalCharge.value + ctotalBonus.value;
+        ctotalCharge.value += parseFloat(cresponse.data[i].chargeEstimate);
+        ctotalBonus.value += parseFloat(cresponse.data[i].trip.deliveredAt <= cresponse.data[i].deliveryTime? (cresponse.data[i].chargeEstimate * 0.1).toFixed(2) : 0.00);
+        var temp = cresponse.data[i];
+        cdeliveries.value.push(temp);
+      }
+      cfinalBill.value = ctotalCharge.value + ctotalBonus.value;
       })
       .catch((error) => {
         console.log(error);
@@ -679,7 +689,6 @@ function openGenerateBilling() {
 
 function closeGenerateBilling() {
   isOpenGenerateBilling.value = false;
-  deliveries.value = null;
 }
 function openGenerateSalary() {
   isOpenGenerateSalary.value = true;
@@ -687,7 +696,6 @@ function openGenerateSalary() {
 
 function closeGenerateSalary() {
   isOpenGenerateSalary.value = false;
-  deliveries.value = null;
 }
 
 function generateBillPDF(){
