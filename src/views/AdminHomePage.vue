@@ -10,6 +10,7 @@ import CourierServices from "../services/CourierServices.js";
 import CustomerServices from "../services/CustomerServices.js";
 import CostServices from "../services/CostServices.js";
 import DeliveryServices from "../services/DeliveryServices";
+import { jsPDF } from "jspdf";
 
 const route = useRoute();
 const router = useRouter();
@@ -689,6 +690,27 @@ function closeGenerateSalary() {
   deliveries.value = null;
 }
 
+function generateBillPDF(){
+  const doc = new jsPDF({
+    orientation: "landscape",
+  });
+  var html = 
+  "<!DOCTYPE html><html><body><h1>Generate &nbsp; Billing</h1>" +
+  document.getElementById("billingpdf").innerHTML
+  + "<p>Total Bill to Customer: $"+ finalBill.value.toFixed(2) +"</p>"
+  + "</body></html>";
+  doc.html(html, {
+    callback: function(doc) {
+        // Save the PDF
+        doc.save('billing.pdf');
+    },
+    x: 10,
+    y: 10,
+    width: 280, //target width in the PDF document
+    windowWidth: 1350 //window width in CSS pixels
+  });
+}
+
 function openAddCashier() {
   closeViewCashier();
   newCashier = ref({
@@ -1359,7 +1381,7 @@ function truncateDesc(desc){
         </v-card>
       </v-dialog>
 <!-- View Generate Billing Dialog-->
-<v-dialog persistent v-model="isOpenGenerateBilling" width="950">
+<v-dialog persistent v-model="isOpenGenerateBilling" width="950" >
         <v-card class="rounded-lg elevation-5">
           <v-card-title class="headline mb-2">Generate Customer Billing</v-card-title>
           <v-card-text>
@@ -1380,10 +1402,11 @@ function truncateDesc(desc){
                 </template>
           </v-select>
           </v-card-text>
-          <v-card-text>
+          <v-card-text id="billingpdf">
             <v-table>
               <thead>
                 <tr>
+                  <th>Customer Name</th>
                   <th>Destination Customer Name</th>
                   <th>Location</th>
                   <th>Created At</th>
@@ -1398,6 +1421,7 @@ function truncateDesc(desc){
                 <tr  v-for="delivery in deliveries"
                   :key="delivery.id"
                 >
+                  <td>{{ delivery.originCustomer.name }}</td>
                   <td>{{ delivery.destinationCustomer.name }}</td>
                   <td>{{ delivery.destinationCustomer.location }}</td>
                   <td>{{ formatDate(delivery.destinationCustomer.createdAt) }}</td>
@@ -1409,6 +1433,7 @@ function truncateDesc(desc){
                 </tr>
                 <tr>
                   <td>Total</td>
+                  <td></td>
                   <td></td>
                   <td></td>
                   <td></td>
@@ -1427,9 +1452,9 @@ function truncateDesc(desc){
             <v-btn variant="flat" color="secondary" @click="closeGenerateBilling()"
               >Close</v-btn
             >
-            <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
-              >Add Hotel</v-btn
-            > -->
+            <v-btn variant="flat" color="primary" @click="generateBillPDF()"
+              >Generate PDF</v-btn
+            >
           </v-card-actions>
         </v-card>
       </v-dialog>
