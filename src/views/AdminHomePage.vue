@@ -868,7 +868,7 @@ function formatDate (date) {
   var dateObj = new Date(date);
   date = new Date(date).toISOString().substr(0, 10);
   const [year, month, day] = date.split('-');
-  const hours = pad(dateObj.getHours(), 2);
+  const hours = pad(dateObj.getUTCHours(), 2);
   const minutes = pad(dateObj.getMinutes(), 2);
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
@@ -1535,7 +1535,7 @@ function truncateDesc(desc){
                   <td>{{ delivery.originCustomer.location }}</td>
                   <td>{{ delivery.destinationCustomer.name }}</td>
                   <td>{{ delivery.destinationCustomer.location }}</td>
-                  <td>{{ formatDate(delivery.destinationCustomer.createdAt) }}</td>
+                  <td>{{ formatDate(delivery.createdAt) }}</td>
                   <td>{{ formatDate(delivery.deliveryTime) }}</td>
                   <td>{{ formatDate(delivery.trip.deliveredAt) }}</td>
                   <td>{{ delivery.trip.blocksToDestination }}</td>
