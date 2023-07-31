@@ -710,6 +710,26 @@ function generateBillPDF(){
     windowWidth: 1350 //window width in CSS pixels
   });
 }
+function generateSalaryPDF(){
+  const doc = new jsPDF({
+    orientation: "landscape",
+  });
+  var html = 
+  "<!DOCTYPE html><html><body><h1>Generate &nbsp; Salary</h1>" +
+  document.getElementById("salarypdf").innerHTML
+  + "<p>Total Salary to Courier: $"+ cfinalBill.value.toFixed(2) +"</p>"
+  + "</body></html>";
+  doc.html(html, {
+    callback: function(doc) {
+        // Save the PDF
+        doc.save('salary.pdf');
+    },
+    x: 10,
+    y: 10,
+    width: 280, //target width in the PDF document
+    windowWidth: 1750 //window width in CSS pixels
+  });
+}
 
 function openAddCashier() {
   closeViewCashier();
@@ -899,7 +919,7 @@ function truncateDesc(desc){
         </v-col>
         <v-col class="d-flex justify-end" cols="4">
           <v-btn v-if="isAdmin" color="accent" @click="openGenerateSalary()">
-            Generate Customer Salary
+            Generate Courier Salary
           </v-btn>
         </v-col>
         <!-- <v-col class="d-flex justify-end" cols="2">
@@ -1481,7 +1501,7 @@ function truncateDesc(desc){
                 </template>
           </v-select>
           </v-card-text>
-          <v-card-text>
+          <v-card-text id="salarypdf">
             <v-table>
               <thead>
                 <tr>
@@ -1537,9 +1557,9 @@ function truncateDesc(desc){
             <v-btn variant="flat" color="secondary" @click="closeGenerateSalary()"
               >Close</v-btn
             >
-            <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
-              >Add Hotel</v-btn
-            > -->
+            <v-btn variant="flat" color="primary" @click="generateSalaryPDF()"
+              >Generate PDF</v-btn
+            >
           </v-card-actions>
         </v-card>
       </v-dialog>
