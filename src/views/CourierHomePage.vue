@@ -71,7 +71,6 @@ onMounted(async () => {
   getCustomers();
   await getDeliveries();
   getStartNodes();
-  fetchDeliveryRoute();
 });
 
 function openAcceptDelivery(delivery){
@@ -87,6 +86,37 @@ function openAcceptDelivery(delivery){
   };
   updateTrip(delivery.id, {status: 'Accepted'}, newTrip);
   fetchDeliveryRoute();
+}
+
+function openPickedUpDelivery(delivery){
+  if(!deliveryAccepted.value){
+    alert("You have not accepted a delivery!");
+    return;
+  }
+  // deliveryAccepted.value = delivery;
+  var collectedAt = new Date();
+  collectedAt = formatDate(collectedAt);
+  var newTrip = {
+    collectedAt: collectedAt,
+    blocksToDestination: deliveryAccepted.value.blocksEstimate,
+  };
+  updateTrip(delivery.id, {status: 'Picked Up'}, newTrip);
+  fetchDeliveryRoute();
+}
+
+function openDroppedOffDelivery(delivery){
+  if(!deliveryAccepted.value){
+    alert("You have not picked up a delivery!");
+    return;
+  }
+  deliveryAccepted.value = null;
+  var deliveredAt = new Date();
+  deliveredAt = formatDate(deliveredAt);
+  var newTrip = {
+    deliveredAt: deliveredAt
+  };
+  updateTrip(delivery.id, {status: 'Dropped Off'}, newTrip);
+  // fetchDeliveryRoute();
 }
 
 async function fetchDeliveryRoute(){
@@ -162,7 +192,7 @@ async function getDeliveries() {
         delivery.assignedCourierId = delivery.trip.assignedCourierId;
         delivery.oldAssignedCourierId = delivery.trip.assignedCourierId;
         if(user.value.id == delivery.assignedCourierId){
-          if(delivery.status == "Accepted"){
+          if(delivery.status == "Accepted" || delivery.status == "Picked Up"){
             deliveryAccepted.value = delivery;
           }
           return delivery;
