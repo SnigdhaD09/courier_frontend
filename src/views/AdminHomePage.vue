@@ -25,6 +25,7 @@ const isUpdate = ref(false);
 const isAddHotel = ref(false);
 const isUpdateHotel = ref(false);
 const isOpenGenerateBilling = ref(false);
+const isOpenGenerateSalary = ref(false);
 const isAddCashier = ref(false);
 const isAddCourier = ref(false);
 const isUpdateCashier = ref(false);
@@ -39,10 +40,15 @@ const isUpdateCost = ref(false);
 const isViewCost = ref(false);
 const user = ref(null);
 const selectedCustomer = ref(null);
+const selectedCourier = ref(null);
 const deliveries = ref([]);
+const cdeliveries = ref([]);
 const totalCharge = ref(0.00);
 const totalBonus = ref(0.00);
 const finalBill = ref(0.00);
+const ctotalCharge = ref(0.00);
+const ctotalBonus = ref(0.00);
+const cfinalBill = ref(0.00);
 var isAdmin = ref(false);
 const snackbar = ref({
   value: false,
@@ -528,6 +534,30 @@ async function customerSelected(){
       });
 }
 
+async function courierSelected(){
+  if(!selectedCourier.value){
+    return null;
+  }
+  await DeliveryServices.getDeliveriesByCourier(selectedCourier.value)
+    .then((response) => {
+      ctotalCharge.value = 0;
+      ctotalBonus.value = 0;
+      cfinalBill.value = 0;
+      cdeliveries.value = response.data;
+        for(var i=0; i< cdeliveries.value.length; i++){
+          ctotalCharge.value += parseFloat(cdeliveries.value[i].chargeEstimate);
+          ctotalBonus.value += parseFloat(cdeliveries.value[i].trip.deliveredAt <= cdeliveries.value[i].deliveryTime? (cdeliveries.value[i].chargeEstimate * 0.1).toFixed(2) : 0.00);
+        }
+        cfinalBill.value = ctotalCharge.value + ctotalBonus.value;
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+}
+
 async function getCosts() {
   await CostServices.getCosts()
     .then((response) => {
@@ -648,6 +678,15 @@ function openGenerateBilling() {
 
 function closeGenerateBilling() {
   isOpenGenerateBilling.value = false;
+  deliveries.value = null;
+}
+function openGenerateSalary() {
+  isOpenGenerateSalary.value = true;
+}
+
+function closeGenerateSalary() {
+  isOpenGenerateSalary.value = false;
+  deliveries.value = null;
 }
 
 function openAddCashier() {
@@ -836,12 +875,12 @@ function truncateDesc(desc){
             >Generate Customer Billing</v-btn
           >
         </v-col>
-        <!-- <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="isAdmin" color="accent" @click="openViewCouriers()"
-            >View Couriers</v-btn
-          >
+        <v-col class="d-flex justify-end" cols="4">
+          <v-btn v-if="isAdmin" color="accent" @click="openGenerateSalary()">
+            Generate Customer Salary
+          </v-btn>
         </v-col>
-        <v-col class="d-flex justify-end" cols="2">
+        <!-- <v-col class="d-flex justify-end" cols="2">
           <v-btn v-if="isAdmin" color="accent" @click="openViewCustomers()"
             >View Customers</v-btn
           >
@@ -1319,8 +1358,8 @@ function truncateDesc(desc){
           </v-card-actions>
         </v-card>
       </v-dialog>
-<!-- View Hotels Dialog-->
-      <v-dialog persistent v-model="isOpenGenerateBilling" width="950">
+<!-- View Generate Billing Dialog-->
+<v-dialog persistent v-model="isOpenGenerateBilling" width="950">
         <v-card class="rounded-lg elevation-5">
           <v-card-title class="headline mb-2">Generate Customer Billing</v-card-title>
           <v-card-text>
@@ -1386,6 +1425,91 @@ function truncateDesc(desc){
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn variant="flat" color="secondary" @click="closeGenerateBilling()"
+              >Close</v-btn
+            >
+            <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
+              >Add Hotel</v-btn
+            > -->
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+<!-- View Generate Salary Dialog-->
+<v-dialog persistent v-model="isOpenGenerateSalary" width="1200">
+        <v-card class="rounded-lg elevation-5">
+          <v-card-title class="headline mb-2">Generate Courier Salary</v-card-title>
+          <v-card-text>
+            <v-select
+              v-model="selectedCourier"
+              label="Select Courier"
+              :items="couriers"
+              item-title="firstName"
+              item-value="id"
+              required
+              searchable
+              :on-change="courierSelected()"
+            >
+            <template slot="item" slot-scope="data">
+                  <v-list-tile-content>
+                    <v-list-tile-title v-html="data.item.firstName"></v-list-tile-title>
+                  </v-list-tile-content>
+                </template>
+          </v-select>
+          </v-card-text>
+          <v-card-text>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>Courier Name</th>
+                  <th>Origin Customer Name</th>
+                  <th>Origin Location</th>
+                  <th>Destination Customer Name</th>
+                  <th>Destination Location</th>
+                  <th>Created At</th>
+                  <th>Expected Delivery</th>
+                  <th>Delivered At</th>
+                  <th>Blocks</th>
+                  <th>Charge</th>
+                  <th>Bonus</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr  v-for="delivery in cdeliveries"
+                  :key="delivery.id"
+                >
+                  <td>{{ delivery.trip.assignedCourier.firstName }} {{ delivery.trip.assignedCourier.lastName }}</td>
+                  <td>{{ delivery.originCustomer.name }}</td>
+                  <td>{{ delivery.originCustomer.location }}</td>
+                  <td>{{ delivery.destinationCustomer.name }}</td>
+                  <td>{{ delivery.destinationCustomer.location }}</td>
+                  <td>{{ formatDate(delivery.destinationCustomer.createdAt) }}</td>
+                  <td>{{ formatDate(delivery.deliveryTime) }}</td>
+                  <td>{{ formatDate(delivery.trip.deliveredAt) }}</td>
+                  <td>{{ delivery.trip.blocksToDestination }}</td>
+                  <td>${{ delivery.chargeEstimate }}</td>
+                  <td>${{ delivery.trip.deliveredAt <= delivery.deliveryTime? (delivery.chargeEstimate * 0.1).toFixed(2) : "0.00" }}</td>                  
+                </tr>
+                <tr>
+                  <td>Total</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>${{ ctotalCharge.toFixed(2) }}</td>
+                  <td>${{ ctotalBonus.toFixed(2) }}</td>
+                </tr>
+              </tbody>
+            </v-table>
+            <v-span style="font-size: small;">* All times are in 24 Hour format</v-span>
+          </v-card-text>
+          
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="flat" color="secondary" @click="closeGenerateSalary()"
               >Close</v-btn
             >
             <!-- <v-btn variant="flat" color="primary" @click="openAddHotel()"
